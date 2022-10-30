@@ -862,12 +862,12 @@ export default class RapiDoc extends LitElement {
       let currentI = allNavEl.findIndex((el) => el === oldNavEl);
       const targetI = allNavEl.findIndex((el) => el === targetEl);
 
-      if (entry.boundingClientRect.y < 50 && direction === 1) {
+      if (entry.boundingClientRect.y < 64 && direction === 1) {
         if (!entry.isIntersecting && targetI >= currentI) {
           currentI++;
           newNavEl = allNavEl[currentI];
         }
-      } else if (entry.intersectionRatio === 1 && direction === -1 && targetI <= currentI) {
+      } else if (direction === -1 && (targetI < currentI || (targetI === currentI && !entry.isIntersecting))) {
         currentI--;
         newNavEl = allNavEl[currentI];
       } else if (targetI === 0 && direction === -1) {
