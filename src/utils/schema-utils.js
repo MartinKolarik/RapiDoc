@@ -56,6 +56,9 @@ export function getTypeInfo(schema) {
     info.default = arrayItemDefault;
     info.allowedValues = Array.isArray(schema.items?.enum) ? schema.items.enum.join('┃') : '';
   }
+  if (schema.const) {
+    info.allowedValues = schema.const;
+  }
   if (dataType.match(/integer|number/g)) {
     if (schema.minimum !== undefined || schema.exclusiveMinimum !== undefined) {
       constrain += schema.minimum !== undefined ? `Min ${schema.minimum}` : `More than ${schema.exclusiveMinimum}`;
