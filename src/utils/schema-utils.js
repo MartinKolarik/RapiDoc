@@ -669,7 +669,7 @@ export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
       }
     }
     if (schema.additionalProperties) {
-      obj['<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});
+      obj[schema.additionalProperties?.['x-key-pattern'] || '<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});
     }
   } else if (schema.type === 'array' || schema.items) { // If Array
     obj['::title'] = schema.title || '';
