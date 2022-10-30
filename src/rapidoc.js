@@ -35,11 +35,12 @@ export default class RapiDoc extends LitElement {
     const intersectionObserverOptions = {
       root: this.getRootNode().host,
       rootMargin: '-50px 0px -50px 0px', // when the element is visible 100px from bottom
-      threshold: 0,
+      threshold: [0, 1],
     };
     this.showSummaryWhenCollapsed = true;
     this.isIntersectionObserverActive = true;
     this.intersectionObserver = new IntersectionObserver((entries) => { this.onIntersect(entries); }, intersectionObserverOptions);
+    this.st = 0;
   }
 
   static get properties() {
@@ -843,23 +844,53 @@ export default class RapiDoc extends LitElement {
     if (this.isIntersectionObserverActive === false) {
       return;
     }
-    entries.forEach((entry) => {
-      if (entry.isIntersecting && entry.intersectionRatio > 0) {
-        const oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
-        const newNavEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
+    const st = this.shadowRoot.querySelector('.main-content').scrollTop;
+    const direction = st > this.st ? 1 : -1;
+    this.st = st;
 
-        // Add active class in the new element
-        if (newNavEl) {
-          if (this.updateRoute === 'true') {
-            window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix || '#'}${entry.target.id}`);
-          }
-          newNavEl.scrollIntoView({ behavior: 'auto', block: 'center' });
-          newNavEl.classList.add('active');
+    entries.forEach((entry) => {
+      let oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
+      const allNavEl = Array.from(this.shadowRoot.querySelectorAll('.nav-bar-tag, .nav-bar-path, .nav-bar-info, .nav-bar-h1, .nav-bar-h2, .operations'));
+      const targetEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
+      let newNavEl;
+
+      if (!oldNavEl) {
+        // eslint-disable-next-line prefer-destructuring
+        oldNavEl = allNavEl[0];
+      }
+
+      let currentI = allNavEl.findIndex((el) => el === oldNavEl);
+      const targetI = allNavEl.findIndex((el) => el === targetEl);
+
+      if (entry.boundingClientRect.y < 50 && direction === 1) {
+        if (!entry.isIntersecting && targetI >= currentI) {
+          currentI++;
+          newNavEl = allNavEl[currentI];
         }
+      } else if (entry.intersectionRatio === 1 && direction === -1 && targetI <= currentI) {
+        currentI--;
+        newNavEl = allNavEl[currentI];
+      } else if (targetI === 0 && direction === -1) {
+        currentI = 0;
+        newNavEl = allNavEl[currentI];
+      }
+
+      // Add active class in the new element
+      if (newNavEl) {
+        if (this.updateRoute === 'true') {
+          window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix || '#'}${newNavEl.getAttribute('data-content-id')}`);
+        }
+        newNavEl.scrollIntoView({
+          behavior: 'auto',
+          block: 'center',
+        });
+
         // Remove active class from previous element
         if (oldNavEl) {
           oldNavEl.classList.remove('active');
         }
+
+        newNavEl.classList.add('active');
       }
     });
   }
