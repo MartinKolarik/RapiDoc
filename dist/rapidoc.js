@@ -3740,7 +3740,8 @@ pre[class*="language-"] {
   height:16px;
   text-align: center;
   display: inline-block;
-  transform: rotate(270deg);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease-out 0s;
 }
 .nav-bar.focused .nav-bar-tag-and-paths.expanded .nav-bar-tag-icon::after {
   content: '⌵';
@@ -3748,6 +3749,7 @@ pre[class*="language-"] {
   height:16px;
   text-align: center;
   display: inline-block;
+  transition: transform 0.2s ease-out 0s;
 }
 .nav-scroll::-webkit-scrollbar {
   width: var(--scroll-bar-width, 8px);
@@ -3861,9 +3863,28 @@ pre[class*="language-"] {
 This file is reserved for any custom css that developers want to add to
 customize their theme. Simply add your css to this file and yarn build.
 */
+// language=CSS
 
 /* harmony default export */ const custom_styles = (r`
+:host {
+    --font-size-small: 13px;
+}
 
+#nav-bar-search {
+    border-color: var(--nav-bg-color) !important;
+}
+
+#nav-bar-search + div {
+    display: none;
+}
+
+.nav-bar > div:first-of-type {
+    padding: 8px 14px 12px 15px !important;
+}
+
+.nav-bar-path {
+    font-size: calc(var(--font-size-small) + 0px);
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -28287,6 +28308,7 @@ function callbackTemplate(callbacks) {
                       .parameters = "${((_method$ = method[1]) === null || _method$ === void 0 ? void 0 : _method$.parameters) || ''}" 
                       .request_body = "${((_method$2 = method[1]) === null || _method$2 === void 0 ? void 0 : _method$2.requestBody) || ''}"
                       fill-request-fields-with-example = "${this.fillRequestFieldsWithExample}"
+                      use-summary-to-list-example = "${this.useSummaryToListExamples}"
                       allow-try = "false"
                       render-style="${this.renderStyle}" 
                       schema-style = "${this.schemaStyle}"
@@ -28448,6 +28470,10 @@ function getTypeInfo(schema) {
     info.arrayType = `${schema.type} of ${Array.isArray(arrayItemType) ? arrayItemType.join('') : arrayItemType}`;
     info.default = arrayItemDefault;
     info.allowedValues = Array.isArray((_schema$items3 = schema.items) === null || _schema$items3 === void 0 ? void 0 : _schema$items3.enum) ? schema.items.enum.join('┃') : '';
+  }
+
+  if (schema.const) {
+    info.allowedValues = schema.const;
   }
 
   if (dataType.match(/integer|number/g)) {
@@ -29191,7 +29217,9 @@ function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
     }
 
     if (schema.additionalProperties) {
-      obj['<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});
+      var _schema$additionalPro;
+
+      obj[((_schema$additionalPro = schema.additionalProperties) === null || _schema$additionalPro === void 0 ? void 0 : _schema$additionalPro['x-key-pattern']) || '<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});
     }
   } else if (schema.type === 'array' || schema.items) {
     var _schema$items6;
@@ -30236,6 +30264,10 @@ class ApiRequest extends lit_element_s {
         type: String,
         attribute: 'fill-request-fields-with-example'
       },
+      useSummaryToListExamples: {
+        type: String,
+        attribute: 'use-summary-to-list-example'
+      },
       allowTry: {
         type: String,
         attribute: 'allow-try'
@@ -30439,7 +30471,7 @@ class ApiRequest extends lit_element_s {
     return $`
     ${exampleList.length > 0 ? $`<span style="font-weight:bold">Example: </span>
         ${exampleList.map((v, i) => {
-      var _v$value, _v$value2;
+      var _v$value, _v$value2, _v$value3;
 
       return $`
           ${i === 0 ? '' : '┃'}
@@ -30458,7 +30490,9 @@ class ApiRequest extends lit_element_s {
           }
         }
       }}"
-          >${v.value && Array.isArray(v.value) ? (_v$value2 = v.value) === null || _v$value2 === void 0 ? void 0 : _v$value2.join(', ') : v.value || ''}</a>
+          >
+          ${this.useSummaryToListExamples === 'true' ? v.description || v.summary || (v.value && Array.isArray(v.value) ? (_v$value2 = v.value) === null || _v$value2 === void 0 ? void 0 : _v$value2.join(', ') : v.value || '') : v.value && Array.isArray(v.value) ? (_v$value3 = v.value) === null || _v$value3 === void 0 ? void 0 : _v$value3.join(', ') : v.value || ''}
+          </a>
           ${paramType === 'array' ? '] ' : ''}
         `;
     })}
@@ -32459,6 +32493,7 @@ function expandedEndpointBodyTemplate(path, tagName = '') {
         .servers = "${path.servers}"
         server-url = "${((_path$servers = path.servers) === null || _path$servers === void 0 ? void 0 : (_path$servers$ = _path$servers[0]) === null || _path$servers$ === void 0 ? void 0 : _path$servers$.url) || this.selectedServer.computedUrl}"
         fill-request-fields-with-example = "${this.fillRequestFieldsWithExample}"
+        use-summary-to-list-example = "${this.useSummaryToListExamples}"
         allow-try = "${this.allowTry}"
         accept = "${accept}"
         render-style="${this.renderStyle}" 
@@ -32636,10 +32671,10 @@ function overviewTemplate() {
             ${this.resolvedSpec.info.termsOfService ? $`<span><a href="${this.resolvedSpec.info.termsOfService}" part="anchor anchor-overview">Terms of Service</a></span>` : ''}
             ${this.specUrl && this.allowSpecFileDownload === 'true' ? $`
                 <div style="display:flex; margin:12px 0; gap:8px; justify-content: start;">
-                  <button class="m-btn thin-border" style="width:170px" part="btn btn-outline" @click='${e => {
+                  <button class="m-btn thin-border" part="btn btn-outline" @click='${e => {
     downloadResource(this.specUrl, 'openapi-spec', e);
   }}'>Download OpenAPI spec</button>
-                  ${(_this$specUrl = this.specUrl) !== null && _this$specUrl !== void 0 && _this$specUrl.trim().toLowerCase().endsWith('json') ? $`<button class="m-btn thin-border" style="width:200px" part="btn btn-outline" @click='${e => {
+                  ${(_this$specUrl = this.specUrl) !== null && _this$specUrl !== void 0 && _this$specUrl.trim().toLowerCase().endsWith('json') ? $`<button class="m-btn thin-border" part="btn btn-outline" @click='${e => {
     viewResource(this.specUrl, e);
   }}'>View OpenAPI spec (New Tab)</button>` : ''}
                 </div>` : ''}
@@ -32840,7 +32875,7 @@ function navbarTemplate() {
                   style = "width:100%; padding-right:20px; color:var(--nav-hover-text-color); border-color:var(--nav-accent-color); background-color:var(--nav-hover-bg-color)" 
                   type = "text"
                   placeholder = "Filter" 
-                  @change = "${this.onSearchChange}"  
+                  @input = "${this.onSearchChange}"  
                   spellcheck = "false" 
                 >
                 <div style="margin: 6px 5px 0 -24px; font-size:var(--font-size-regular); cursor:pointer;">&#x21a9;</div>
@@ -33230,6 +33265,7 @@ function endpointBodyTemplate(path) {
           server-url = "${path.servers && path.servers.length > 0 ? path.servers[0].url : this.selectedServer.computedUrl}" 
           active-schema-tab = "${this.defaultSchemaTab}"
           fill-request-fields-with-example = "${this.fillRequestFieldsWithExample}"
+          use-summary-to-list-example = "${this.useSummaryToListExamples}"
           allow-try = "${this.allowTry}"
           accept = "${accept}"
           render-style="${this.renderStyle}" 
@@ -34116,13 +34152,14 @@ class RapiDoc extends lit_element_s {
       root: this.getRootNode().host,
       rootMargin: '-50px 0px -50px 0px',
       // when the element is visible 100px from bottom
-      threshold: 0
+      threshold: [0, 1]
     };
     this.showSummaryWhenCollapsed = true;
     this.isIntersectionObserverActive = true;
     this.intersectionObserver = new IntersectionObserver(entries => {
       this.onIntersect(entries);
     }, intersectionObserverOptions);
+    this.st = 0;
   }
 
   static get properties() {
@@ -34184,6 +34221,10 @@ class RapiDoc extends lit_element_s {
       fillRequestFieldsWithExample: {
         type: String,
         attribute: 'fill-request-fields-with-example'
+      },
+      useSummaryToListExamples: {
+        type: String,
+        attribute: 'use-summary-to-list-example'
       },
       persistAuth: {
         type: String,
@@ -34757,6 +34798,10 @@ class RapiDoc extends lit_element_s {
       this.fillRequestFieldsWithExample = 'true';
     }
 
+    if (!this.useSummaryToListExamples || !'true, false,'.includes(`${this.useSummaryToListExamples},`)) {
+      this.useSummaryToListExamples = 'false';
+    }
+
     if (!this.persistAuth || !'true, false,'.includes(`${this.persistAuth},`)) {
       this.persistAuth = 'false';
     }
@@ -35257,27 +35302,52 @@ class RapiDoc extends lit_element_s {
       return;
     }
 
+    const st = this.shadowRoot.querySelector('.main-content').scrollTop;
+    const direction = st > this.st ? 1 : -1;
+    this.st = st;
     entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio > 0) {
-        const oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
-        const newNavEl = this.shadowRoot.getElementById(`link-${entry.target.id}`); // Add active class in the new element
+      let oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
+      const allNavEl = Array.from(this.shadowRoot.querySelectorAll('.nav-bar-tag, .nav-bar-path, .nav-bar-info, .nav-bar-h1, .nav-bar-h2, .operations'));
+      const targetEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
+      let newNavEl;
 
-        if (newNavEl) {
-          if (this.updateRoute === 'true') {
-            window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix || '#'}${entry.target.id}`);
-          }
+      if (!oldNavEl) {
+        // eslint-disable-next-line prefer-destructuring
+        oldNavEl = allNavEl[0];
+      }
 
-          newNavEl.scrollIntoView({
-            behavior: 'auto',
-            block: 'center'
-          });
-          newNavEl.classList.add('active');
-        } // Remove active class from previous element
+      let currentI = allNavEl.findIndex(el => el === oldNavEl);
+      const targetI = allNavEl.findIndex(el => el === targetEl);
 
+      if (entry.boundingClientRect.y < 50 && direction === 1) {
+        if (!entry.isIntersecting && targetI >= currentI) {
+          currentI++;
+          newNavEl = allNavEl[currentI];
+        }
+      } else if (entry.intersectionRatio === 1 && direction === -1 && targetI <= currentI) {
+        currentI--;
+        newNavEl = allNavEl[currentI];
+      } else if (targetI === 0 && direction === -1) {
+        currentI = 0;
+        newNavEl = allNavEl[currentI];
+      } // Add active class in the new element
+
+
+      if (newNavEl) {
+        if (this.updateRoute === 'true') {
+          window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix || '#'}${newNavEl.getAttribute('data-content-id')}`);
+        }
+
+        newNavEl.scrollIntoView({
+          behavior: 'auto',
+          block: 'center'
+        }); // Remove active class from previous element
 
         if (oldNavEl) {
           oldNavEl.classList.remove('active');
         }
+
+        newNavEl.classList.add('active');
       }
     });
   } // Called by anchor tags created using markdown
@@ -35509,6 +35579,10 @@ class RapiDocMini extends lit_element_s {
         type: String,
         attribute: 'fill-request-fields-with-example'
       },
+      useSummaryToListExamples: {
+        type: String,
+        attribute: 'use-summary-to-list-example'
+      },
       persistAuth: {
         type: String,
         attribute: 'persist-auth'
@@ -35692,6 +35766,10 @@ class RapiDocMini extends lit_element_s {
 
     if (!this.fillRequestFieldsWithExample || !'true, false,'.includes(`${this.fillRequestFieldsWithExample},`)) {
       this.fillRequestFieldsWithExample = 'true';
+    }
+
+    if (!this.useSummaryToListExamples || !'true, false,'.includes(`${this.useSummaryToListExamples},`)) {
+      this.useSummaryToListExamples = 'false';
     }
 
     if (!this.persistAuth || !'true, false,'.includes(`${this.persistAuth},`)) {
@@ -42179,7 +42257,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("17d08cc6fa39b23c87c7")
+/******/ 		__webpack_require__.h = () => ("eefb4dd17d798e4e79a6")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
