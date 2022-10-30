@@ -60,7 +60,7 @@ export default function navbarTemplate() {
                   style = "width:100%; padding-right:20px; color:var(--nav-hover-text-color); border-color:var(--nav-accent-color); background-color:var(--nav-hover-bg-color)" 
                   type = "text"
                   placeholder = "Filter" 
-                  @change = "${this.onSearchChange}"  
+                  @input = "${this.onSearchChange}"  
                   spellcheck = "false" 
                 >
                 <div style="margin: 6px 5px 0 -24px; font-size:var(--font-size-regular); cursor:pointer;">&#x21a9;</div>
