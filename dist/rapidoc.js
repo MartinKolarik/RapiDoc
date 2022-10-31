@@ -31100,7 +31100,8 @@ class ApiRequest extends lit_element_s {
   }
 
   apiResponseTabTemplate() {
-    const responseFormat = this.responseHeaders.includes('json') ? 'json' : this.responseHeaders.includes('html') || this.responseHeaders.includes('xml') ? 'html' : '';
+    const responseFormat = ''; // this.responseHeaders.includes('json') ? 'json' : (this.responseHeaders.includes('html') || this.responseHeaders.includes('xml')) ? 'html' : '';
+
     return $`
       <div class="row" style="font-size:var(--font-size-small); margin:5px 0">
         <div class="response-message ${this.responseStatus}">Response Status: ${this.responseMessage}</div>
@@ -42257,7 +42258,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("048bed639320703ba528")
+/******/ 		__webpack_require__.h = () => ("ba73791134ff4545c1d9")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
