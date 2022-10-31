@@ -26,4 +26,8 @@ export default css`
 .nav-bar-path {
     font-size: calc(var(--font-size-small) + 0px);
 }
+
+.main-content-inner--view-mode {
+    padding: 0 12px;
+}
 `;
