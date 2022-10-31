@@ -3885,6 +3885,10 @@ customize their theme. Simply add your css to this file and yarn build.
 .nav-bar-path {
     font-size: calc(var(--font-size-small) + 0px);
 }
+
+.main-content-inner--view-mode {
+    padding: 0 12px;
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -42258,7 +42262,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("ba73791134ff4545c1d9")
+/******/ 		__webpack_require__.h = () => ("ad6d207520a8c201e7bb")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
