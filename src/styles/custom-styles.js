@@ -30,4 +30,10 @@ export default css`
 .main-content-inner--view-mode {
     padding: 0 12px;
 }
+
+@media (max-width: 1023px) {
+    .main-content-inner--view-mode .endpoint-head .method {
+        display: none;
+    }
+}
 `;
