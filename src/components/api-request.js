@@ -916,7 +916,7 @@ export default class ApiRequest extends LitElement {
   }
 
   apiResponseTabTemplate() {
-    const responseFormat = this.responseHeaders.includes('json') ? 'json' : (this.responseHeaders.includes('html') || this.responseHeaders.includes('xml')) ? 'html' : '';
+    const responseFormat = ''; // this.responseHeaders.includes('json') ? 'json' : (this.responseHeaders.includes('html') || this.responseHeaders.includes('xml')) ? 'html' : '';
     return html`
       <div class="row" style="font-size:var(--font-size-small); margin:5px 0">
         <div class="response-message ${this.responseStatus}">Response Status: ${this.responseMessage}</div>
