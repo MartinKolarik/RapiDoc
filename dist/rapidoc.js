@@ -3889,6 +3889,12 @@ customize their theme. Simply add your css to this file and yarn build.
 .main-content-inner--view-mode {
     padding: 0 12px;
 }
+
+@media (max-width: 1023px) {
+    .main-content-inner--view-mode .endpoint-head .method {
+        display: none;
+    }
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -42262,7 +42268,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("ad6d207520a8c201e7bb")
+/******/ 		__webpack_require__.h = () => ("a471c2f056fba9b75d99")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
