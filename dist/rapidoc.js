@@ -3901,7 +3901,7 @@ customize their theme. Simply add your css to this file and yarn build.
    border-radius: 4px;
    font-size: calc(var(--font-size-small) - 2px);
    white-space: nowrap;
-   background-color: #17D4A7;
+   background-color: var(--blue);
    margin: 0 10px 0 auto;
    color: #fff
 }
@@ -42294,7 +42294,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("009d18ba7a6ce6f3009c")
+/******/ 		__webpack_require__.h = () => ("c9da7a52af74211fa456")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
