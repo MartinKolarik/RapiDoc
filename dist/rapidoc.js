@@ -3895,6 +3895,20 @@ customize their theme. Simply add your css to this file and yarn build.
         display: none;
     }
 }
+
+.nav-label {
+   padding: 1px 4px;
+   border-radius: 4px;
+   font-size: calc(var(--font-size-small) - 2px);
+   white-space: nowrap;
+   background-color: #17D4A7;
+   margin: 0 10px 0 auto;
+   color: #fff
+}
+
+.nav-label.false {
+    display: none;
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -27494,7 +27508,8 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
     description: v.description || '',
     headers: v.description ? getHeadersFromMarkdown(v.description) : [],
     paths: [],
-    expanded: v['x-tag-expanded'] !== false
+    expanded: v['x-tag-expanded'] !== false,
+    xLabels: v['x-labels'] || undefined
   })) : [];
   const pathsAndWebhooks = openApiSpec.paths || {};
 
@@ -27548,7 +27563,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
           tagObj = tags.find(v => v.name === tag);
 
           if (!tagObj) {
-            var _specTagsItem, _specTagsItem2;
+            var _specTagsItem, _specTagsItem2, _specTagsItem3;
 
             tagObj = {
               show: true,
@@ -27557,7 +27572,8 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
               description: ((_specTagsItem = specTagsItem) === null || _specTagsItem === void 0 ? void 0 : _specTagsItem.description) || '',
               headers: (_specTagsItem2 = specTagsItem) !== null && _specTagsItem2 !== void 0 && _specTagsItem2.description ? getHeadersFromMarkdown(specTagsItem.description) : [],
               paths: [],
-              expanded: specTagsItem ? specTagsItem['x-tag-expanded'] !== false : true
+              expanded: specTagsItem ? specTagsItem['x-tag-expanded'] !== false : true,
+              xLabels: ((_specTagsItem3 = specTagsItem) === null || _specTagsItem3 === void 0 ? void 0 : _specTagsItem3['x-labels']) || undefined
             };
             tags.push(tagObj);
           } // Generate a short summary which is broken
@@ -27617,6 +27633,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
             // commonSummary: commonPathProp.summary,
             // commonDescription: commonPathProp.description,
             xBadges: pathOrHookObj['x-badges'] || undefined,
+            xLabels: pathOrHookObj['x-labels'] || undefined,
             xCodeSamples: pathOrHookObj['x-codeSamples'] || pathOrHookObj['x-code-samples'] || ''
           });
         }); // End of tag path create
@@ -32953,7 +32970,13 @@ function navbarTemplate() {
     }
   }}'
                 >
-                  <div>${tag.name}</div>
+                  <div style="display: flex; width: 100%;">
+                    <span>${tag.name}</span>
+                    ${$`<span class="nav-label ${tag.xLabels && tag.xLabels.find(l => l.toLowerCase() === 'new') || 'false'}">
+                      NEW
+                    </span>`}
+
+                  </div>
                   <div class="nav-bar-tag-icon" @click="${e => {
     if (this.renderStyle === 'focused' && this.onNavTagClick === 'show-description') {
       onExpandCollapse.call(this, e);
@@ -32993,12 +33016,15 @@ function navbarTemplate() {
     this.scrollToEventTarget(e, false);
   }}'
               >
-                <span style = "display:flex; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}">
+                <span style = "display:flex; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}; width: 100%;">
                   ${$`<span class="nav-method ${this.showMethodInNavBar} ${p.method}">
                       ${this.showMethodInNavBar === 'as-colored-block' ? p.method.substring(0, 3).toUpperCase() : p.method.toUpperCase()}
                     </span>`}
                   ${p.isWebhook ? $`<span style="font-weight:bold; margin-right:8px; font-size: calc(var(--font-size-small) - 2px)">WEBHOOK</span>` : ''}
                   ${this.usePathInNavBar === 'true' ? $`<span class='mono-font'>${p.path}</span>` : p.summary || p.shortSummary}
+                  ${$`<span class="nav-label ${p.xLabels && p.xLabels.find(l => l.toLowerCase() === 'new') || 'false'}">
+                    NEW
+                  </span>`}
                 </span>
               </div>`)}
             </div>
@@ -42268,7 +42294,7 @@ Prism.languages.js = Prism.languages.javascript;
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("a471c2f056fba9b75d99")
+/******/ 		__webpack_require__.h = () => ("009d18ba7a6ce6f3009c")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
