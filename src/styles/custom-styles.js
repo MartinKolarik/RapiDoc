@@ -36,4 +36,18 @@ export default css`
         display: none;
     }
 }
+
+.nav-label {
+   padding: 1px 4px;
+   border-radius: 4px;
+   font-size: calc(var(--font-size-small) - 2px);
+   white-space: nowrap;
+   background-color: #17D4A7;
+   margin: 0 10px 0 auto;
+   color: #fff
+}
+
+.nav-label.false {
+    display: none;
+}
 `;

@@ -151,7 +151,13 @@ export default function navbarTemplate() {
                     }
                   }}'
                 >
-                  <div>${tag.name}</div>
+                  <div style="display: flex; width: 100%;">
+                    <span>${tag.name}</span>
+                    ${html`<span class="nav-label ${(tag.xLabels && tag.xLabels.find((l) => l.toLowerCase() === 'new')) || 'false'}">
+                      NEW
+                    </span>`}
+
+                  </div>
                   <div class="nav-bar-tag-icon" @click="${(e) => {
                     if (this.renderStyle === 'focused' && this.onNavTagClick === 'show-description') {
                       onExpandCollapse.call(this, e);
@@ -197,7 +203,7 @@ export default function navbarTemplate() {
                   this.scrollToEventTarget(e, false);
                 }}'
               >
-                <span style = "display:flex; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}">
+                <span style = "display:flex; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}; width: 100%;">
                   ${html`<span class="nav-method ${this.showMethodInNavBar} ${p.method}">
                       ${this.showMethodInNavBar === 'as-colored-block' ? p.method.substring(0, 3).toUpperCase() : p.method.toUpperCase()}
                     </span>`
@@ -206,6 +212,10 @@ export default function navbarTemplate() {
                   ${this.usePathInNavBar === 'true'
                     ? html`<span class='mono-font'>${p.path}</span>`
                     : p.summary || p.shortSummary
+                  }
+                  ${html`<span class="nav-label ${(p.xLabels && p.xLabels.find((l) => l.toLowerCase() === 'new')) || 'false'}">
+                    NEW
+                  </span>`
                   }
                 </span>
               </div>`)}

@@ -250,6 +250,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
       headers: v.description ? getHeadersFromMarkdown(v.description) : [],
       paths: [],
       expanded: v['x-tag-expanded'] !== false,
+      xLabels: v['x-labels'] || undefined,
     }))
     : [];
 
@@ -306,6 +307,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
               headers: specTagsItem?.description ? getHeadersFromMarkdown(specTagsItem.description) : [],
               paths: [],
               expanded: (specTagsItem ? specTagsItem['x-tag-expanded'] !== false : true),
+              xLabels: specTagsItem?.['x-labels'] || undefined,
             };
             tags.push(tagObj);
           }
@@ -362,6 +364,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
             // commonSummary: commonPathProp.summary,
             // commonDescription: commonPathProp.description,
             xBadges: pathOrHookObj['x-badges'] || undefined,
+            xLabels: pathOrHookObj['x-labels'] || undefined,
             xCodeSamples: pathOrHookObj['x-codeSamples'] || pathOrHookObj['x-code-samples'] || '',
           });
         });// End of tag path create
