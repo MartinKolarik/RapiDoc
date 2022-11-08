@@ -42,7 +42,7 @@ export default css`
    border-radius: 4px;
    font-size: calc(var(--font-size-small) - 2px);
    white-space: nowrap;
-   background-color: #17D4A7;
+   background-color: var(--blue);
    margin: 0 10px 0 auto;
    color: #fff
 }
