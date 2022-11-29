@@ -7,7 +7,7 @@ export default function setTheme(baseTheme, theme = {}) {
   // Common Theme colors
   const primaryColor = theme.primaryColor ? theme.primaryColor : baseTheme === 'dark' ? '#f76b39' : '#ff591e';
   const primaryColorInvert = ColorUtils.color.invert(primaryColor);
-  const primaryColorTrans = ColorUtils.color.opacity(primaryColor, '0.8');
+  const primaryColorTrans = ColorUtils.color.opacity(primaryColor, '0.4');
 
   // Dark and Light Theme colors
   if (baseTheme === 'dark') {
@@ -31,6 +31,8 @@ export default function setTheme(baseTheme, theme = {}) {
     const navHoverBgColor = theme.navHoverBgColor ? theme.navHoverBgColor : ColorUtils.color.brightness(navBgColor, -15);
     const navHoverTextColor = theme.navHoverTextColor ? theme.navHoverTextColor : ColorUtils.color.invert(navBgColor);
     const navAccentColor = theme.navAccentColor ? theme.navAccentColor : ColorUtils.color.brightness(primaryColor, 25);
+    const navAccentTextColor = theme.navAccentTextColor ? theme.navAccenttextColor : ColorUtils.color.invert(navAccentColor);
+
     const overlayBg = 'rgba(80, 80, 80, 0.4)';
 
     newTheme = {
@@ -54,7 +56,7 @@ export default function setTheme(baseTheme, theme = {}) {
       navHoverBgColor,
       navHoverTextColor,
       navAccentColor,
-
+      navAccentTextColor,
       headerColor,
       headerColorInvert: ColorUtils.color.invert(headerColor),
       headerColorDarker: ColorUtils.color.brightness(headerColor, -20),
@@ -123,6 +125,7 @@ export default function setTheme(baseTheme, theme = {}) {
     const navHoverBgColor = theme.navHoverBgColor ? theme.navHoverBgColor : ColorUtils.color.brightness(navBgColor, -15);
     const navHoverTextColor = theme.navHoverTextColor ? theme.navHoverTextColor : ColorUtils.color.invert(navBgColor);
     const navAccentColor = theme.navAccentColor ? theme.navAccentColor : ColorUtils.color.brightness(primaryColor, 25);
+    const navAccentTextColor = theme.navAccentTextColor ? theme.navAccenttextColor : ColorUtils.color.invert(navAccentColor);
     const overlayBg = 'rgba(0, 0, 0, 0.4)';
 
     newTheme = {
@@ -146,7 +149,7 @@ export default function setTheme(baseTheme, theme = {}) {
       navHoverBgColor,
       navHoverTextColor,
       navAccentColor,
-
+      navAccentTextColor,
       headerColor,
       headerColorInvert: ColorUtils.color.invert(headerColor),
       headerColorDarker: ColorUtils.color.brightness(headerColor, -20),
@@ -206,10 +209,12 @@ export default function setTheme(baseTheme, theme = {}) {
       : '7px 16px 7px 10px')};
     
     --resp-area-height: ${this.responseAreaHeight};
-    --font-size-small:  ${this.fontSize === 'default' ? '12px' : (this.fontSize === 'large' ? '13px' : '14px')};
-    --font-size-mono:   ${this.fontSize === 'default' ? '13px' : (this.fontSize === 'large' ? '14px' : '15px')};
+    --font-size-small: ${this.fontSize === 'default' ? '12px' : (this.fontSize === 'large' ? '13px' : '14px')};
+    --font-size-mono: ${this.fontSize === 'default' ? '13px' : (this.fontSize === 'large' ? '14px' : '15px')};
     --font-size-regular: ${this.fontSize === 'default' ? '14px' : (this.fontSize === 'large' ? '15px' : '16px')};
     --dialog-z-index: 1000;
+
+    --focus-shadow: 0 0 0 1px transparent, 0 0 0 3px ${newTheme.primaryColorTrans};
 
     /* Theme specific styles */  
     --bg:${newTheme.bg1};
@@ -259,6 +264,7 @@ export default function setTheme(baseTheme, theme = {}) {
     --nav-hover-bg-color:${newTheme.navHoverBgColor};
     --nav-hover-text-color:${newTheme.navHoverTextColor};
     --nav-accent-color:${newTheme.navAccentColor};
+    --nav-accent-text-color:${newTheme.navAccentTextColor};
 
     /* Nav API Method Colors*/
     --nav-get-color:${newTheme.blue};

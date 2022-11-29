@@ -3,6 +3,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js'; // eslint-disable-li
 import { guard } from 'lit/directives/guard.js'; // eslint-disable-line import/extensions
 import { live } from 'lit/directives/live.js'; // eslint-disable-line import/extensions
 import { marked } from 'marked';
+import formatXml from 'xml-but-prettier';
 import Prism from 'prismjs';
 import TableStyles from '~/styles/table-styles';
 import FlexStyles from '~/styles/flex-styles';
@@ -12,8 +13,15 @@ import BorderStyles from '~/styles/border-styles';
 import TabStyles from '~/styles/tab-styles';
 import PrismStyles from '~/styles/prism-styles';
 import CustomStyles from '~/styles/custom-styles';
-import { copyToClipboard, prettyXml, downloadResource, viewResource } from '~/utils/common-utils';
-import { schemaInObjectNotation, getTypeInfo, generateExample, normalizeExamples, getSchemaFromParam, json2xml, nestExampleIfPresent } from '~/utils/schema-utils';
+import { copyToClipboard, downloadResource, viewResource } from '~/utils/common-utils';
+import { schemaInObjectNotation,
+  getTypeInfo,
+  generateExample,
+  normalizeExamples,
+  getSchemaFromParam,
+  json2xml,
+  nestExampleIfPresent,
+  anyExampleWithSummaryOrDescription } from '~/utils/schema-utils';
 import '~/components/json-tree';
 import '~/components/schema-tree';
 import '~/components/tag-input';
@@ -46,13 +54,13 @@ export default class ApiRequest extends LitElement {
       parser: { type: Object },
       accept: { type: String },
       callback: { type: String },
+      webhook: { type: String },
       responseMessage: { type: String, attribute: false },
       responseText: { type: String, attribute: false },
       responseHeaders: { type: String, attribute: false },
       responseStatus: { type: String, attribute: false },
       responseUrl: { type: String, attribute: false },
       fillRequestFieldsWithExample: { type: String, attribute: 'fill-request-fields-with-example' },
-      useSummaryToListExamples: { type: String, attribute: 'use-summary-to-list-example' },
       allowTry: { type: String, attribute: 'allow-try' },
       renderStyle: { type: String, attribute: 'render-style' },
       schemaStyle: { type: String, attribute: 'schema-style' },
@@ -69,6 +77,7 @@ export default class ApiRequest extends LitElement {
       schemaDescriptionExpanded: { type: String, attribute: 'schema-description-expanded' },
       allowSchemaDescriptionExpandToggle: { type: String, attribute: 'allow-schema-description-expand-toggle' },
       schemaHideReadOnly: { type: String, attribute: 'schema-hide-read-only' },
+      schemaHideWriteOnly: { type: String, attribute: 'schema-hide-write-only' },
       fetchCredentials: { type: String, attribute: 'fetch-credentials' },
 
       // properties for internal tracking
@@ -89,7 +98,9 @@ export default class ApiRequest extends LitElement {
       PrismStyles,
       css`
         *, *:before, *:after { box-sizing: border-box; }
-    
+        :where(button, input[type="checkbox"], [tabindex="0"]):focus-visible { box-shadow: var(--focus-shadow); }
+        :where(input[type="text"], input[type="password"], select, textarea):focus-visible { border-color: var(--primary-color); }
+        tag-input:focus-within { outline: 1px solid;}
         .read-mode {
           margin-top: 24px;
         }
@@ -193,18 +204,19 @@ export default class ApiRequest extends LitElement {
         ${this.callback === 'true' ? 'CALLBACK REQUEST' : 'REQUEST'}
       </div>
       <div>
-        ${guard([this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('path'))}
-        ${guard([this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('query'))}
+        ${guard([this.method, this.path, this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('path'))}
+        ${guard([this.method, this.path, this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('query'))}
         ${this.requestBodyTemplate()}
-        ${guard([this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('header'))}
-        ${guard([this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('cookie'))}
+        ${guard([this.method, this.path, this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('header'))}
+        ${guard([this.method, this.path, this.allowTry, this.parameters, this.activeParameterSchemaTabs], () => this.inputParametersTemplate('cookie'))}
         ${this.allowTry === 'false' ? '' : html`${this.apiCallTemplate()}`}
       </div>  
     </div>
     `;
   }
 
-  updated(changedProperties) {
+  /*
+  async updated(changedProperties) {
     // In focused mode after rendering the request component, update the text-areas(which contains examples) using
     // the original values from hidden textareas
     // This is done coz, user may update the dom by editing the textarea's and once the DOM is updated externally change detection wont happen, therefore update the values manually
@@ -212,51 +224,91 @@ export default class ApiRequest extends LitElement {
       if (changedProperties.size === 1 && changedProperties.has('activeSchemaTab')) {
         // dont update example as only tabs is switched
       } else {
-        const exampleTextAreaEls = [...this.shadowRoot.querySelectorAll('textarea[data-ptype="form-data"]')];
-        exampleTextAreaEls.forEach((el) => {
-          const origExampleEl = this.shadowRoot.querySelector(`textarea[data-pname='hidden-${el.dataset.pname}']`);
-          if (origExampleEl) {
-            el.value = origExampleEl.value;
-          }
-        });
+        this.requestUpdate();
       }
+    }
+  }
+  */
+
+  async saveExampleState() {
+    if (this.renderStyle === 'focused') {
+      const reqBodyTextAreaEls = [...this.shadowRoot.querySelectorAll('textarea.request-body-param-user-input')];
+      reqBodyTextAreaEls.forEach((el) => {
+        el.dataset.user_example = el.value;
+      });
+      const exampleTextAreaEls = [...this.shadowRoot.querySelectorAll('textarea[data-ptype="form-data"]')];
+      exampleTextAreaEls.forEach((el) => {
+        el.dataset.user_example = el.value;
+      });
+      this.requestUpdate();
+    }
+  }
+
+  async updateExamplesFromDataAttr() {
+    // In focused mode after rendering the request component, update the text-areas(which contains examples) using
+    // the original values from hidden textareas
+    // This is done coz, user may update the dom by editing the textarea's and once the DOM is updated externally change detection wont happen, therefore update the values manually
+    if (this.renderStyle === 'focused') {
+      const reqBodyTextAreaEls = [...this.shadowRoot.querySelectorAll('textarea.request-body-param-user-input')];
+      reqBodyTextAreaEls.forEach((el) => {
+        el.value = el.dataset.user_example || el.dataset.example;
+      });
+      const exampleTextAreaEls = [...this.shadowRoot.querySelectorAll('textarea[data-ptype="form-data"]')];
+      exampleTextAreaEls.forEach((el) => {
+        el.value = el.dataset.user_example || el.dataset.example;
+      });
+      this.requestUpdate();
     }
   }
 
   /* eslint-disable indent */
+  renderExample(example, paramType, paramName) {
+    return html`
+      ${paramType === 'array' ? '[' : ''}
+      <a
+        part="anchor anchor-param-example"
+        style="display:inline-block; min-width:24px; text-align:center"
+        class="${this.allowTry === 'true' ? '' : 'inactive-link'}"
+        data-example-type="${paramType === 'array' ? paramType : 'string'}"
+        data-example="${example.value && Array.isArray(example.value) ? example.value?.join('~|~') : example.value || ''}"
+        @click="${(e) => {
+          const inputEl = e.target.closest('table').querySelector(`[data-pname="${paramName}"]`);
+          if (inputEl) {
+            inputEl.value = e.target.dataset.exampleType === 'array' ? e.target.dataset.example.split('~|~') : e.target.dataset.example;
+          }
+        }}"
+      > ${example.printableValue || example.value} </a>
+      ${paramType === 'array' ? '] ' : ''}
+    `;
+  }
+
+  renderShortFormatExamples(examples, paramType, paramName) {
+    return html`${examples.map((x, i) => html`
+      ${i === 0 ? '' : '┃'}
+      ${this.renderExample(x, paramType, paramName)}`)}`;
+  }
+
+  renderLongFormatExamples(exampleList, paramType, paramName) {
+    return html` <ul style="list-style-type: disclosure-closed;">
+      ${exampleList.map((v) => html`
+          <li>
+            ${this.renderExample(v, paramType, paramName)}
+            ${v.summary?.length > 0 ? html`<span>&lpar;${v.summary}&rpar;</span>` : ''}
+            ${v.description?.length > 0 ? html`<p>${unsafeHTML(marked(v.description))}</p>` : ''}
+          </li>
+        `)}
+    </ul>`;
+  }
 
   exampleListTemplate(paramName, paramType, exampleList = []) {
-    return html`
-    ${(exampleList.length > 0
-      ? html`<span style="font-weight:bold">Example: </span>
-        ${exampleList.map((v, i) => html`
-          ${i === 0 ? '' : '┃'}
-          ${paramType === 'array' ? '[' : ''}
-          <a part="anchor anchor-param-example" class = "${this.allowTry === 'true' ? '' : 'inactive-link'}"
-            data-example-type="${paramType === 'array' ? paramType : 'string'}"
-            data-example = "${v.value && Array.isArray(v.value) ? (v.value?.join('~|~')) : (v.value || '')}"
-            @click="${(e) => {
-              const inputEl = e.target.closest('table').querySelector(`[data-pname="${paramName}"]`);
-              if (inputEl) {
-                if (e.target.dataset.exampleType === 'array') {
-                  inputEl.value = e.target.dataset.example.split('~|~');
-                } else {
-                  inputEl.value = e.target.dataset.example;
-                }
-              }
-            }
-          }"
-          >
-          ${this.useSummaryToListExamples === 'true'
-            ? v.description || v.summary || (v.value && Array.isArray(v.value) ? (v.value?.join(', ')) : (v.value || ''))
-            : v.value && Array.isArray(v.value) ? (v.value?.join(', ')) : (v.value || '')
-          }
-          </a>
-          ${paramType === 'array' ? '] ' : ''}
-        `)}
-      `
-      : ''
-    )}`;
+    return html` ${
+      exampleList.length > 0
+        ? html`<span style="font-weight:bold">Examples: </span>
+          ${anyExampleWithSummaryOrDescription(exampleList)
+            ? this.renderLongFormatExamples(exampleList, paramType, paramName)
+            : this.renderShortFormatExamples(exampleList, paramType, paramName)}`
+        : ''
+      }`;
   }
 
   inputParametersTemplate(paramType) {
@@ -279,7 +331,7 @@ export default class ApiRequest extends LitElement {
     for (const param of filteredParams) {
       const [declaredParamSchema, serializeStyle, mimeTypeElem] = getSchemaFromParam(param);
       if (!declaredParamSchema) {
-        continue; // eslint-disable-line no-continue
+        continue;
       }
       const paramSchema = getTypeInfo(declaredParamSchema);
       if (!paramSchema) {
@@ -304,7 +356,6 @@ export default class ApiRequest extends LitElement {
           paramAllowReserved = param.allowReserved;
         }
       }
-
       // openapi 3.1.0 spec based examples (which must be Object(string : { value:any, summary?: string, description?: string})
       const example = normalizeExamples(
         (param.examples
@@ -322,7 +373,8 @@ export default class ApiRequest extends LitElement {
           serializeStyle || 'json',
           '',
           '',
-          true,
+          this.callback === 'true' || this.webhook === 'true' ? true : false, // eslint-disable-line no-unneeded-ternary
+          this.callback === 'true' || this.webhook === 'true' ? false : true, // eslint-disable-line no-unneeded-ternary
           true,
           'text',
           false,
@@ -346,7 +398,7 @@ export default class ApiRequest extends LitElement {
         </td>  
         ${this.allowTry === 'true'
           ? html`
-            <td style="min-width:100px;">
+            <td style="min-width:100px;" colspan="${paramSchema.default || paramSchema.constrain || paramSchema.allowedValues || paramSchema.pattern ? '1' : '2'}">
               ${paramSchema.type === 'array'
                 ? html`
                   <tag-input class="request-param" 
@@ -357,9 +409,13 @@ export default class ApiRequest extends LitElement {
                     data-param-serialize-style = "${paramStyle}"
                     data-param-serialize-explode = "${paramExplode}"
                     data-param-allow-reserved = "${paramAllowReserved}"
+                    data-x-fill-example = "${param['x-fill-example'] || 'yes'}"
                     data-array = "true"
                     placeholder = "add-multiple &#x21a9;"
-                    .value = "${Array.isArray(example.exampleVal) ? example.exampleVal : example.exampleVal}"
+                    .value="${param['x-fill-example'] === 'no'
+                      ? []
+                      : live(this.fillRequestFieldsWithExample === 'true' ? Array.isArray(example.exampleVal) ? example.exampleVal : [example.exampleVal] : [])
+                    }"
                   >
                   </tag-input>`
                 : paramSchema.type === 'object'
@@ -386,22 +442,26 @@ export default class ApiRequest extends LitElement {
                             data-param-serialize-style = "${paramStyle}"
                             data-param-serialize-explode = "${paramExplode}"
                             data-param-allow-reserved = "${paramAllowReserved}"
+                            data-x-fill-example = "${param['x-fill-example'] || 'yes'}"
                             spellcheck = "false"
-                            .textContent = "${this.fillRequestFieldsWithExample === 'true' ? example.exampleVal : ''}"
+                            .textContent="${param['x-fill-example'] === 'no' ? '' : live(this.fillRequestFieldsWithExample === 'true' ? example.exampleVal : '')}"
                             style = "resize:vertical; width:100%; height: ${'read focused'.includes(this.renderStyle) ? '180px' : '120px'};"
                           ></textarea>
                         </div>`
                         : html`
-                          <div class="tab-content col">            
+                          <div class="tab-content col">
                             <schema-tree
                               class = 'json'
                               style = 'display: block'
                               .data = '${schemaAsObj}'
                               schema-expand-level = "${this.schemaExpandLevel}"
                               schema-description-expanded = "${this.schemaDescriptionExpanded}"
-                              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}",
+                              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
                               schema-hide-read-only = "${this.schemaHideReadOnly.includes(this.method)}"
-                              schema-hide-write-only = "false"
+                              schema-hide-write-only = "${this.schemaHideWriteOnly.includes(this.method)}"
+                              exportparts = "wrap-request-btn:wrap-request-btn, btn:btn, btn-fill:btn-fill, btn-outline:btn-outline, btn-try:btn-try, btn-clear:btn-clear, btn-clear-resp:btn-clear-resp,
+                                file-input:file-input, textbox:textbox, textbox-param:textbox-param, textarea:textarea, textarea-param:textarea-param, 
+                                anchor:anchor, anchor-param-example:anchor-param-example"
                             > </schema-tree>
                           </div>`
                         }
@@ -449,12 +509,12 @@ export default class ApiRequest extends LitElement {
                   }`)}
               </div>
             </td>`
-          : ''
+          : html`<td></td>`
         }
       </tr>
       <tr>
         ${this.allowTry === 'true' ? html`<td style="border:none"> </td>` : ''}
-        <td colspan="2" style="border:none;">
+        <td colspan="2" style="border:none">
           <span class="m-markdown-small">${unsafeHTML(marked(param.description || ''))}</span>
           ${this.exampleListTemplate.call(this, param.name, paramSchema.type, example.exampleList)}
         </td>
@@ -465,15 +525,22 @@ export default class ApiRequest extends LitElement {
     return html`
     <div class="table-title top-gap">${title}</div>
     <div style="display:block; overflow-x:auto; max-width:100%;">
-      <table class="m-table" style="width:100%; word-break:break-word;">
+      <table role="presentation" class="m-table" style="width:100%; word-break:break-word;">
         ${tableRows}
       </table>
     </div>`;
   }
 
-  resetRequestBodySelection() {
+  // This method is called before navigation change in focusd mode
+  async beforerNavigationFocusedMode() {
+    // this.saveExampleState();
+  }
+
+  // This method is called after navigation change in focusd mode
+  async afterNavigationFocusedMode() {
     this.selectedRequestBodyType = '';
     this.selectedRequestBodyExample = '';
+    this.updateExamplesFromDataAttr();
     this.clearResponseData();
   }
 
@@ -555,8 +622,8 @@ export default class ApiRequest extends LitElement {
             reqBody.mimeType,
             reqBody.examples,
             reqBody.example,
-            false,
-            true,
+            this.callback === 'true' || this.webhook === 'true' ? true : false, // eslint-disable-line no-unneeded-ternary
+            this.callback === 'true' || this.webhook === 'true' ? false : true, // eslint-disable-line no-unneeded-ternary
             'text',
             false,
           );
@@ -614,8 +681,8 @@ export default class ApiRequest extends LitElement {
             reqBody.mimeType,
             reqBody.examples,
             reqBody.example,
-            false,
-            true,
+            this.callback === 'true' || this.webhook === 'true' ? true : false, // eslint-disable-line no-unneeded-ternary
+            this.callback === 'true' || this.webhook === 'true' ? false : true, // eslint-disable-line no-unneeded-ternary
             'text',
             false,
           );
@@ -645,9 +712,10 @@ export default class ApiRequest extends LitElement {
               .data = '${schemaAsObj}'
               schema-expand-level = "${this.schemaExpandLevel}"
               schema-description-expanded = "${this.schemaDescriptionExpanded}"
-              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}",
-              schema-hide-read-only = "${this.schemaHideReadOnly.includes(this.method)}"
-              schema-hide-write-only = "false"
+              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
+              schema-hide-read-only = "${this.schemaHideReadOnly}"
+              schema-hide-write-only = "${this.schemaHideWriteOnly}"
+              exportparts = "schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
             > </schema-table>
           `;
         } else if (this.schemaStyle === 'tree') {
@@ -659,9 +727,10 @@ export default class ApiRequest extends LitElement {
               .data = "${schemaAsObj}"
               schema-expand-level = "${this.schemaExpandLevel}"
               schema-description-expanded = "${this.schemaDescriptionExpanded}"
-              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}",
-              schema-hide-read-only = "true"
-              schema-hide-write-only = "false"
+              allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
+              schema-hide-read-only = "${this.schemaHideReadOnly}"
+              schema-hide-write-only = "${this.schemaHideWriteOnly}"
+              exportparts = "schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
             > </schema-tree>
           `;
         }
@@ -685,10 +754,8 @@ export default class ApiRequest extends LitElement {
                 <button class="tab-btn ${this.activeSchemaTab === 'example' ? 'active' : ''}" data-tab = 'example'>EXAMPLE</button>
                 <button class="tab-btn ${this.activeSchemaTab !== 'example' ? 'active' : ''}" data-tab = 'schema'>SCHEMA</button>
               </div>
-              ${this.activeSchemaTab === 'example'
-                ? html`<div class="tab-content col"> ${reqBodyExampleHtml}</div>`
-                : html`<div class="tab-content col"> ${reqBodySchemaHtml}</div>`
-              }
+              ${html`<div class="tab-content col" style="display:${this.activeSchemaTab === 'example' ? 'block' : 'none'};"> ${reqBodyExampleHtml}</div>`}
+              ${html`<div class="tab-content col" style="display:${this.activeSchemaTab === 'example' ? 'none' : 'block'};"> ${reqBodySchemaHtml}</div>`}
             </div>`
           : html`  
             ${reqBodyFileInputHtml}
@@ -706,8 +773,8 @@ export default class ApiRequest extends LitElement {
       'json',
       fieldSchema.examples,
       fieldSchema.example,
-      false,
-      true,
+      this.callback === 'true' || this.webhook === 'true' ? true : false, // eslint-disable-line no-unneeded-ternary
+      this.callback === 'true' || this.webhook === 'true' ? false : true, // eslint-disable-line no-unneeded-ternary
       'text',
       false,
     );
@@ -749,8 +816,6 @@ export default class ApiRequest extends LitElement {
             .textContent = "${this.fillRequestFieldsWithExample === 'true' ? formdataPartExample[0].exampleValue : ''}"
             spellcheck = "false"
           ></textarea>
-          <!-- This textarea(hidden) is to store the original example value, in focused mode on navbar change it is used to update the example text -->
-          <textarea data-pname = "hidden-${fieldName}" data-ptype = "${mimeType.includes('form-urlencode') ? 'hidden-form-urlencode' : 'hidden-form-data'}" class="is-hidden" style="display:none">${formdataPartExample[0].exampleValue}</textarea>
         </div>`
       }
       ${html`
@@ -895,7 +960,7 @@ export default class ApiRequest extends LitElement {
         }`);
       }
       return html`
-        <table style="width:100%;" class="m-table">
+        <table role="presentation" style="width:100%;" class="m-table">
           ${formDataTableRows}
         </table>
       `;
@@ -916,7 +981,12 @@ export default class ApiRequest extends LitElement {
   }
 
   apiResponseTabTemplate() {
-    const responseFormat = ''; // this.responseHeaders.includes('json') ? 'json' : (this.responseHeaders.includes('html') || this.responseHeaders.includes('xml')) ? 'html' : '';
+    let responseFormat = '';
+    let responseContent = '';
+    if (!this.responseIsBlob) {
+      responseFormat = 'text';
+      responseContent = html`<code>${this.responseText}</code>`;
+    }
     return html`
       <div class="row" style="font-size:var(--font-size-small); margin:5px 0">
         <div class="response-message ${this.responseStatus}">Response Status: ${this.responseMessage}</div>
@@ -946,10 +1016,7 @@ export default class ApiRequest extends LitElement {
           : html`
             <div class="tab-content col m-markdown" style="flex:1; display:${this.activeResponseTab === 'response' ? 'flex' : 'none'};" >
               <button class="toolbar-btn" style="position:absolute; top:12px; right:8px" @click='${(e) => { copyToClipboard(this.responseText, e); }}' part="btn btn-fill"> Copy </button>
-              <pre style="white-space:pre; min-height:50px; height:400px; resize:vertical; overflow:auto">${responseFormat
-                ? html`<code>${unsafeHTML(Prism.highlight(this.responseText, Prism.languages[responseFormat], responseFormat))}</code>`
-                : `${this.responseText}`
-              }</pre>
+              <pre style="white-space:pre; min-height:50px; height:var(--resp-area-height, 400px); resize:vertical; overflow:auto">${responseContent}</pre>
             </div>`
         }
         <div class="tab-content col m-markdown" style="flex:1; display:${this.activeResponseTab === 'headers' ? 'flex' : 'none'};" >
@@ -989,7 +1056,7 @@ export default class ApiRequest extends LitElement {
     `;
 
     return html`
-    <div style="display:flex; align-items:flex-end; margin:16px 0; font-size:var(--font-size-small);">
+    <div style="display:flex; align-items:flex-end; margin:16px 0; font-size:var(--font-size-small);" part="wrap-request-btn">
       <div class="hide-in-small-screen" style="flex-direction:column; margin:0; width:calc(100% - 60px);">
         <div style="display:flex; flex-direction:row; align-items:center; overflow:hidden;"> 
           ${selectedServerHtml}
@@ -1153,7 +1220,7 @@ export default class ApiRequest extends LitElement {
             }
           }
         } catch (err) {
-          console.log('RapiDoc: unable to parse %s into object', el.value); // eslint-disable-line no-console
+          console.error('RapiDoc: unable to parse %s into object', el.value); // eslint-disable-line no-console
         }
         if (queryParam.toString()) {
           urlQueryParamsMap.set(el.dataset.pname, queryParam);
@@ -1332,15 +1399,22 @@ export default class ApiRequest extends LitElement {
     const controller = new AbortController();
     const { signal } = controller;
     fetchOptions.headers = reqHeaders;
-    const fetchRequest = new Request(fetchUrl, fetchOptions);
+    const tempRequest = { url: fetchUrl, ...fetchOptions };
     this.dispatchEvent(new CustomEvent('before-try', {
       bubbles: true,
       composed: true,
       detail: {
-        request: fetchRequest,
+        request: tempRequest,
         controller,
       },
     }));
+    const updatedFetchOptions = {
+      method: tempRequest.method,
+      headers: tempRequest.headers,
+      credentials: tempRequest.credentials,
+      body: tempRequest.body,
+    };
+    const fetchRequest = new Request(tempRequest.url, updatedFetchOptions);
 
     let fetchResponse;
     let responseClone;
@@ -1349,6 +1423,9 @@ export default class ApiRequest extends LitElement {
       let respJson;
       let respText;
       tryBtnEl.disabled = true;
+      this.responseText = '⌛';
+      this.responseMessage = '';
+      this.requestUpdate();
       const startTime = performance.now();
       fetchResponse = await fetch(fetchRequest, { signal });
       const endTime = performance.now();
@@ -1366,7 +1443,9 @@ export default class ApiRequest extends LitElement {
       if (respEmpty) {
         this.responseText = '';
       } else if (contentType) {
-        if (contentType.includes('json')) {
+        if (contentType === 'application/x-ndjson') {
+          this.responseText = await fetchResponse.text();
+        } else if (contentType.includes('json')) {
           if ((/charset=[^"']+/).test(contentType)) {
             const encoding = contentType.split('charset=')[1];
             const buffer = await fetchResponse.arrayBuffer();
@@ -1395,13 +1474,14 @@ export default class ApiRequest extends LitElement {
         } else {
           respText = await fetchResponse.text();
           if (contentType.includes('xml')) {
-            this.responseText = prettyXml(respText);
+            this.responseText = formatXml(respText, { textNodesOnSameLine: true, indentor: '  ' });
+          } else {
+            this.responseText = respText;
           }
-          this.responseText = respText;
         }
         if (this.responseIsBlob) {
           const contentDisposition = fetchResponse.headers.get('content-disposition');
-          this.respContentDisposition = contentDisposition ? contentDisposition.split('filename=')[1].replace(/\\"/g, '') : 'filename';
+          this.respContentDisposition = contentDisposition ? contentDisposition.split('filename=')[1].replace(/"|'/g, '') : 'filename';
           respBlob = await fetchResponse.blob();
           this.responseBlobUrl = URL.createObjectURL(respBlob);
         }
@@ -1432,6 +1512,7 @@ export default class ApiRequest extends LitElement {
           },
         }));
         this.responseMessage = 'Request Aborted';
+        this.responseText = 'Request Aborted';
       } else {
         this.dispatchEvent(new CustomEvent('after-try', {
           bubbles: true,

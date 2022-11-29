@@ -14,23 +14,23 @@ function schemaBodyTemplate(sComponent) {
   ${this.schemaStyle === 'table'
     ? html`
       <schema-table
-        render-style = '${this.renderStyle}'
         .data = '${schemaInObjectNotation(sComponent.component, {})}'
         schema-expand-level = "${this.schemaExpandLevel}"
         schema-description-expanded = "${this.schemaDescriptionExpanded}"
-        allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}",
+        allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
         schema-hide-read-only = "false"
         schema-hide-write-only = "${this.schemaHideWriteOnly}"
-      > </schema-tree> `
+        exportparts = "schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
+      > </schema-table>`
     : html`
       <schema-tree
-        render-style = '${this.renderStyle}'
         .data = '${schemaInObjectNotation(sComponent.component, {})}'
         schema-expand-level = "${this.schemaExpandLevel}"
         schema-description-expanded = "${this.schemaDescriptionExpanded}"
-        allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}",
+        allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
         schema-hide-read-only = "false"
         schema-hide-write-only = "${this.schemaHideWriteOnly}"
+        exportparts = "schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
       > </schema-tree>`
 }
   </div>`;

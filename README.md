@@ -1,10 +1,13 @@
-<img alt="MrinDoc logo" src="https://github.com/mrin9/RapiDoc/blob/master/logo.png" width="60px" />
+<img alt="MrinDoc logo" src="https://github.com/rapi-doc/RapiDoc/blob/master/logo.png" width="60px" />
 
 
 <p align="center">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square"/>
-    <img src="https://img.shields.io/github/size/mrin9/rapidoc/dist/rapidoc-min.js.svg?colorB=blue&label=minified&style=flat-square">
-    <img src="https://img.shields.io/github/size/mrin9/rapidoc/dist/rapidoc-min.js.gz.svg?colorB=blue&label=zip&style=flat-square">
+    <img src="https://img.shields.io/github/size/rapi-doc/rapidoc/dist/rapidoc-min.js.svg?colorB=blue&label=minified&style=flat-square">
+    <img src="https://img.shields.io/github/size/rapi-doc/rapidoc/dist/rapidoc-min.js.gz.svg?colorB=blue&label=zip&style=flat-square">
+    <a href="https://discord.gg/X9evUeFY" alt="Join us on Discord">
+        <img src="https://img.shields.io/discord/848913990360629268?style=flat-square" />
+    </a>
     <a href="https://www.webcomponents.org/element/rapidoc" alt="published on webcomponents.org">
         <img src="https://img.shields.io/badge/webcomponents.org-rapidoc-blue.svg?style=social"/>
     </a>
@@ -12,6 +15,10 @@
 
 # RapiDoc
 Custom Element for Open-API spec viewing
+
+Join the [RapiDoc community on Discord](https://discord.gg/X9evUeFY)
+
+Sponsored by [Zuplo](https://zuplo.link/rapidoc-2) - Get a Stripe-like API experience for your customers in minutes - documentation, rate-limiting and API-key auth in minutes. 
 
 ## Features
 - Supports Swagger 2.0, OpenAPI 3.x.x 
@@ -42,10 +49,10 @@ Custom Element for Open-API spec viewing
 
 
 ## Documentation
-[Check out the usage and demos](https://mrin9.github.io/RapiDoc/)
+[Check out the usage and demos](https://rapi-doc.github.io/RapiDoc/)
 
 ## Examples
-[Examples and Test cases](https://mrin9.github.io/RapiDoc/list.html)
+[Examples and Test cases](https://rapi-doc.github.io/RapiDoc/list.html)
 
 
 ## Build Process

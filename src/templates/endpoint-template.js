@@ -46,9 +46,9 @@ function onExpandCollapseAll(e, action = 'expand-all') {
 /* eslint-disable indent */
 function endpointHeadTemplate(path, pathsExpanded = false) {
   return html`
-  <summary @click="${(e) => { toggleExpand.call(this, path, e); }}" class='endpoint-head ${path.method} ${path.deprecated ? 'deprecated' : ''} ${pathsExpanded || path.expanded ? 'expanded' : 'collapsed'}'>
-    <div class="method ${path.method} ${path.deprecated ? 'deprecated' : ''}"> ${path.method} </div> 
-    <div class="path ${path.deprecated ? 'deprecated' : ''}"> 
+  <summary @click="${(e) => { toggleExpand.call(this, path, e); }}" part="section-endpoint-head-${path.expanded ? 'expanded' : 'collapsed'}" class='endpoint-head ${path.method} ${path.deprecated ? 'deprecated' : ''} ${pathsExpanded || path.expanded ? 'expanded' : 'collapsed'}'>
+    <div part="section-endpoint-head-method" class="method ${path.method} ${path.deprecated ? 'deprecated' : ''}"> ${path.method} </div> 
+    <div  part="section-endpoint-head-path" class="path ${path.deprecated ? 'deprecated' : ''}"> 
       ${path.path} 
       ${path.isWebhook ? html`<span style="font-family: var(--font-regular); font-size: var(--); font-size: var(--font-size-small); color:var(--primary-color); margin-left: 16px"> Webhook</span>` : ''}
     </div>
@@ -62,7 +62,7 @@ function endpointHeadTemplate(path, pathsExpanded = false) {
     ${this.showSummaryWhenCollapsed
       ? html`
         <div class="only-large-screen" style="min-width:60px; flex:1"></div>
-        <div class="descr">${path.summary || path.shortSummary} </div>`
+        <div part="section-endpoint-head-description" class="descr">${path.summary || path.shortSummary} </div>`
       : ''
     }
   </summary>
@@ -88,19 +88,19 @@ function endpointBodyTemplate(path) {
 
   const codeSampleTabPanel = path.xCodeSamples ? codeSamplesTemplate(path.xCodeSamples) : '';
   return html`
-  <div class='endpoint-body ${path.method} ${path.deprecated ? 'deprecated' : ''}'>
+  <div part="section-endpoint-body-${path.expanded ? 'expanded' : 'collapsed'}" class='endpoint-body ${path.method} ${path.deprecated ? 'deprecated' : ''}'>
     <div class="summary">
       ${path.summary
-        ? html`<div class="title">${path.summary}<div>`
+        ? html`<div class="title" part="section-endpoint-body-title">${path.summary}<div>`
         : path.shortSummary !== path.description
-          ? html`<div class="title">${path.shortSummary}</div>`
+          ? html`<div class="title" part="section-endpoint-body-title">${path.shortSummary}</div>`
           : ''
       }
       ${path.xBadges && path.xBadges?.length > 0
         ? html`
           <div style="display:flex; flex-wrap:wrap;font-size: var(--font-size-small);">
             ${path.xBadges.map((v) => (
-                html`<span style="margin:1px; margin-right:5px; padding:1px 8px; font-weight:bold; border-radius:12px;  background-color: var(--light-${v.color}, var(--input-bg)); color:var(--${v.color}); border:1px solid var(--${v.color})">${v.label}</span>`
+                html`<span part="endpoint-badge" style="margin:1px; margin-right:5px; padding:1px 8px; font-weight:bold; border-radius:12px;  background-color: var(--light-${v.color}, var(--input-bg)); color:var(--${v.color}); border:1px solid var(--${v.color})">${v.label}</span>`
               ))
             }
           </div>
@@ -108,7 +108,19 @@ function endpointBodyTemplate(path) {
         : ''
       }
 
-      ${path.description ? html`<div class="m-markdown"> ${unsafeHTML(marked(path.description))}</div>` : ''}
+      ${path.description ? html`<div part="section-endpoint-body-description" class="m-markdown"> ${unsafeHTML(marked(path.description))}</div>` : ''}
+      ${path.externalDocs?.url || path.externalDocs?.description
+        ? html`<div style="background-color:var(--bg3); padding:2px 8px 8px 8px; margin:8px 0; border-radius:var(--border-radius)"> 
+            <div class="m-markdown"> ${unsafeHTML(marked(path.externalDocs?.description || ''))} </div>
+            ${path.externalDocs?.url
+              ? html`<a style="font-family:var(--font-mono); font-size:var(--font-size-small)" href="${path.externalDocs?.url}" target="_blank"> 
+                  ${path.externalDocs?.url} <div style="transform: rotate(270deg) scale(1.5); display: inline-block; margin-left:5px">⇲</div>
+                </a>`
+              : ''
+            }
+          </div>`
+        : ''
+      }
       <slot name="${path.elementId}"></slot>
       ${pathSecurityTemplate.call(this, path.security)}
       ${codeSampleTabPanel}
@@ -118,7 +130,8 @@ function endpointBodyTemplate(path) {
         <api-request
           class = "${this.renderStyle}-mode ${this.layout}-layout"
           style = "width:100%;"
-          method = "${path.method}", 
+          webhook = "${path.isWebhook}"
+          method = "${path.method}"
           path = "${path.path}"
           .security = "${path.security}"
           .parameters = "${path.parameters}"
@@ -128,7 +141,6 @@ function endpointBodyTemplate(path) {
           server-url = "${path.servers && path.servers.length > 0 ? path.servers[0].url : this.selectedServer.computedUrl}" 
           active-schema-tab = "${this.defaultSchemaTab}"
           fill-request-fields-with-example = "${this.fillRequestFieldsWithExample}"
-          use-summary-to-list-example = "${this.useSummaryToListExamples}"
           allow-try = "${this.allowTry}"
           accept = "${accept}"
           render-style="${this.renderStyle}" 
@@ -136,32 +148,36 @@ function endpointBodyTemplate(path) {
           schema-expand-level = "${this.schemaExpandLevel}"
           schema-description-expanded = "${this.schemaDescriptionExpanded}"
           allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
-          schema-hide-read-only = "${this.schemaHideReadOnly}"
+          schema-hide-read-only = "${this.schemaHideReadOnly === 'never' ? 'false' : path.isWebhook ? 'false' : 'true'}"
+          schema-hide-write-only = "${this.schemaHideWriteOnly === 'never' ? 'false' : path.isWebhook ? 'true' : 'false'}"
           fetch-credentials = "${this.fetchCredentials}"
-          exportparts = "btn:btn, btn-fill:btn-fill, btn-outline:btn-outline, btn-try:btn-try, btn-clear:btn-clear, btn-clear-resp:btn-clear-resp,
+          exportparts = "wrap-request-btn:wrap-request-btn, btn:btn, btn-fill:btn-fill, btn-outline:btn-outline, btn-try:btn-try, btn-clear:btn-clear, btn-clear-resp:btn-clear-resp,
             file-input:file-input, textbox:textbox, textbox-param:textbox-param, textarea:textarea, textarea-param:textarea-param, 
-            anchor:anchor, anchor-param-example:anchor-param-example"
-        > </api-request>
+            anchor:anchor, anchor-param-example:anchor-param-example, schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
+          > </api-request>
 
           ${path.callbacks ? callbackTemplate.call(this, path.callbacks) : ''}
-      </div>  
+        </div>  
 
-      <api-response
-        class = "${this.renderStyle}-mode"
-        style = "width:100%;"
-        .responses="${path.responses}"
-        active-schema-tab = "${this.defaultSchemaTab}" 
-        render-style="${this.renderStyle}" 
-        schema-style="${this.schemaStyle}"
-        schema-expand-level = "${this.schemaExpandLevel}"
-        schema-description-expanded = "${this.schemaDescriptionExpanded}"
-        allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
-        schema-hide-write-only = "${this.schemaHideWriteOnly}"
-        selected-status = "${Object.keys(path.responses || {})[0] || ''}"
-        exportparts = 
-        "btn:btn, btn-fill:btn-fill, btn-outline:btn-outline, btn-try:btn-try, file-input:file-input, textbox:textbox, textbox-param:textbox-param, textarea:textarea, textarea-param:textarea-param, anchor:anchor, anchor-param-example:anchor-param-example, btn-clear-resp:btn-clear-resp"
-      > </api-response>
-    </div>
+        <api-response
+          class = "${this.renderStyle}-mode"
+          style = "width:100%;"
+          webhook = "${path.isWebhook}"
+          .responses="${path.responses}"
+          active-schema-tab = "${this.defaultSchemaTab}" 
+          render-style="${this.renderStyle}" 
+          schema-style="${this.schemaStyle}"
+          schema-expand-level = "${this.schemaExpandLevel}"
+          schema-description-expanded = "${this.schemaDescriptionExpanded}"
+          allow-schema-description-expand-toggle = "${this.allowSchemaDescriptionExpandToggle}"
+          schema-hide-read-only = "${this.schemaHideReadOnly === 'never' ? 'false' : path.isWebhook ? 'true' : 'false'}"
+          schema-hide-write-only = "${this.schemaHideWriteOnly === 'never' ? 'false' : path.isWebhook ? 'false' : 'true'}"
+          selected-status = "${Object.keys(path.responses || {})[0] || ''}"
+          exportparts = "btn:btn, btn-fill:btn-fill, btn-outline:btn-outline, btn-try:btn-try, file-input:file-input, 
+          textbox:textbox, textbox-param:textbox-param, textarea:textarea, textarea-param:textarea-param, anchor:anchor, anchor-param-example:anchor-param-example, btn-clear-resp:btn-clear-resp,
+          schema-description:schema-description, schema-multiline-toggle:schema-multiline-toggle"
+        > </api-response>
+      </div>
   </div>`;
 }
 
@@ -200,7 +216,7 @@ export default function endpointTemplate(showExpandCollapse = true, showTags = t
                 }
                 return true;
                 }).map((path) => html`
-                <section id='${path.elementId}' class='m-endpoint regular-font ${path.method} ${pathsExpanded || path.expanded ? 'expanded' : 'collapsed'}'>
+                <section part="section-endpoint" id='${path.elementId}' class='m-endpoint regular-font ${path.method} ${pathsExpanded || path.expanded ? 'expanded' : 'collapsed'}'>
                   ${endpointHeadTemplate.call(this, path, pathsExpanded)}      
                   ${pathsExpanded || path.expanded ? endpointBodyTemplate.call(this, path) : ''}
                 </section>`)

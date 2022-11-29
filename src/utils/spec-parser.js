@@ -106,7 +106,7 @@ export default async function ProcessSpec(specUrl, generateMissingTags = false, 
     } else if (v.type === 'oauth2') {
       v.typeDisplay = `OAuth (${v.securitySchemeId})`;
     } else {
-      v.typeDisplay = v.type;
+      v.typeDisplay = v.type || 'None';
     }
   });
 
@@ -349,6 +349,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
             expandedAtLeastOnce: false,
             summary: (pathOrHookObj.summary || ''),
             description: (pathOrHookObj.description || ''),
+            externalDocs: pathOrHookObj.externalDocs,
             shortSummary,
             method: methodName,
             path: pathOrHookName,

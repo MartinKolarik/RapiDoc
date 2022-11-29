@@ -16,7 +16,8 @@ export function applyApiKey(securitySchemeId, username = '', password = '', prov
   let finalApiKeyValue = '';
   if (securityObj.scheme?.toLowerCase() === 'basic') {
     if (username) {
-      finalApiKeyValue = `Basic ${btoa(`${username}:${password}`)}`;
+      finalApiKeyValue = Buffer.from(`${username}:${password}`, 'utf8').toString('base64');
+      // finalApiKeyValue = `Basic ${btoa(`${username}:${password}`)}`;
     }
   } else if (providedApikeyVal) {
     securityObj.value = providedApikeyVal;
@@ -92,6 +93,10 @@ async function fetchAccessToken(tokenUrl, clientId, clientSecret, redirectUrl, g
   const urlFormParams = new URLSearchParams();
   const headers = new Headers();
   urlFormParams.append('grant_type', grantType);
+  if (grantType === 'authorization_code') {
+    urlFormParams.append('client_id', clientId);
+    urlFormParams.append('client_secret', clientSecret);
+  }
   if (grantType !== 'client_credentials' && grantType !== 'password') {
     urlFormParams.append('redirect_uri', redirectUrl);
   }
@@ -100,7 +105,8 @@ async function fetchAccessToken(tokenUrl, clientId, clientSecret, redirectUrl, g
     urlFormParams.append('code_verifier', codeVerifier); // for PKCE
   }
   if (sendClientSecretIn === 'header') {
-    headers.set('Authorization', `Basic ${btoa(`${clientId}:${clientSecret}`)}`);
+    // headers.set('Authorization', `Basic ${btoa(`${clientId}:${clientSecret}`)}`);
+    headers.set('Authorization', `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`);
   } else {
     urlFormParams.append('client_id', clientId);
     urlFormParams.append('client_secret', clientSecret);
@@ -185,8 +191,8 @@ async function onInvokeOAuthFlow(securitySchemeId, flowType, authUrl, tokenUrl, 
   const sendClientSecretIn = authFlowDivEl.querySelector('.oauth-send-client-secret-in') ? authFlowDivEl.querySelector('.oauth-send-client-secret-in').value.trim() : 'header';
   const checkedScopeEls = [...authFlowDivEl.querySelectorAll('.scope-checkbox:checked')];
   const pkceCheckboxEl = authFlowDivEl.querySelector(`#${securitySchemeId}-pkce`);
-  const state = (`${Math.random().toString(36)}random`).slice(2, 9);
-  const nonce = (`${Math.random().toString(36)}random`).slice(2, 9);
+  const state = (`${Math.random().toString(36).slice(2, 9)}random${Math.random().toString(36).slice(2, 9)}`);
+  const nonce = (`${Math.random().toString(36).slice(2, 9)}random${Math.random().toString(36).slice(2, 9)}`);
   // const codeChallenge = await generateCodeChallenge(codeVerifier);
   const redirectUrlObj = new URL(`${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${this.oauthReceiver}`);
   let grantType = '';
@@ -254,6 +260,7 @@ async function onInvokeOAuthFlow(securitySchemeId, flowType, authUrl, tokenUrl, 
 
 function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, authFlow, defaultScopes = [], receiveTokenIn = 'header') {
   let { authorizationUrl, tokenUrl, refreshUrl } = authFlow;
+  const pkceOnly = authFlow['x-pkce-only'] || false;
   const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
   if (refreshUrl && !isUrlAbsolute(refreshUrl)) {
     refreshUrl = `${this.selectedServer.computedUrl}/${refreshUrl.replace(/^\//, '')}`;
@@ -322,7 +329,7 @@ function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, a
             ${flowName === 'authorizationCode'
               ? html`
                 <div style="margin: 16px 0 4px">
-                  <input type="checkbox" part="checkbox checkbox-auth-scope" id="${securitySchemeId}-pkce" checked>
+                  <input type="checkbox" part="checkbox checkbox-auth-scope" id="${securitySchemeId}-pkce" checked ?disabled=${pkceOnly}>
                   <label for="${securitySchemeId}-pkce" style="margin:0 16px 0 4px; line-height:24px; cursor:pointer">
                    Send Proof Key for Code Exchange (PKCE)
                   </label>
@@ -333,15 +340,17 @@ function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, a
             <input type="text" part="textbox textbox-auth-client-id" value = "${clientId || ''}" placeholder="client-id" spellcheck="false" class="oauth2 ${flowName} ${securitySchemeId} oauth-client-id">
             ${flowName === 'authorizationCode' || flowName === 'clientCredentials' || flowName === 'password'
               ? html`
-                <input type="password" part="textbox textbox-auth-client-secret" value = "${clientSecret || ''}" placeholder="client-secret" spellcheck="false" class="oauth2 ${flowName} ${securitySchemeId} oauth-client-secret" style = "margin:0 5px;">
-                ${flowName === 'authorizationCode' || flowName === 'clientCredentials' || flowName === 'password'
-                  ? html`
-                    <select style="margin-right:5px;" class="${flowName} ${securitySchemeId} oauth-send-client-secret-in">
-                      <option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>
-                      <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>
-                    </select>`
-                  : ''
-                }`
+                <input 
+                  type="password" part="textbox textbox-auth-client-secret" 
+                  value = "${clientSecret || ''}" placeholder="client-secret" spellcheck="false" 
+                  class="oauth2 ${flowName} ${securitySchemeId} 
+                  oauth-client-secret" 
+                  style = "margin:0 5px;${pkceOnly ? 'display:none;' : ''}"
+                >
+                <select style="margin-right:5px;${pkceOnly ? 'display:none;' : ''}" class="${flowName} ${securitySchemeId} oauth-send-client-secret-in">
+                  <option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>
+                  <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>
+                </select>`
               : ''
             }
             ${flowName === 'authorizationCode' || flowName === 'clientCredentials' || flowName === 'implicit' || flowName === 'password'
@@ -395,7 +404,7 @@ export default function securitySchemeTemplate() {
     </div>
     ${this.resolvedSpec.securitySchemes && this.resolvedSpec.securitySchemes.length > 0
       ? html`
-        <table id="auth-table" class='m-table padded-12' style="width:100%;">
+        <table role="presentation" id="auth-table" class='m-table padded-12' style="width:100%;">
           ${this.resolvedSpec.securitySchemes.map((v) => html`
             <tr id="security-scheme-${v.securitySchemeId}" class="${v.type.toLowerCase()}">
               <td style="max-width:500px; overflow-wrap: break-word;">
@@ -462,7 +471,17 @@ export default function securitySchemeTemplate() {
               ? html`
                 <tr>
                   <td style="border:none; padding-left:48px">
-                    ${Object.keys(v.flows).map((f) => oAuthFlowTemplate.call(this, f, v['x-client-id'], v['x-client-secret'], v.securitySchemeId, v.flows[f], v['x-default-scopes'], v['x-receive-token-in']))}
+                    ${Object.keys(v.flows).map((f) => oAuthFlowTemplate
+                      .call(
+                        this,
+                        f,
+                        (v.flows[f]['x-client-id'] || v['x-client-id'] || ''),
+                        (v.flows[f]['x-client-secret'] || v['x-client-secret'] || ''),
+                        v.securitySchemeId,
+                        v.flows[f],
+                        (v.flows[f]['x-default-scopes'] || v['x-default-scopes']),
+                        (v.flows[f]['x-receive-token-in'] || v['x-receive-token-in']),
+                      ))}
                   </td>
                 </tr>
                 `
@@ -480,40 +499,52 @@ export default function securitySchemeTemplate() {
 export function pathSecurityTemplate(pathSecurity) {
   if (this.resolvedSpec.securitySchemes && pathSecurity) {
     const orSecurityKeys1 = [];
+    if (Array.isArray(pathSecurity)) {
+      if (pathSecurity.length === 0) {
+        return '';
+      }
+    } else {
+      return '';
+    }
     pathSecurity.forEach((pSecurity) => {
       const andSecurityKeys1 = [];
       const andKeyTypes = [];
-      Object.keys(pSecurity).forEach((pathSecurityKey) => {
-        let pathScopes = '';
-        const s = this.resolvedSpec.securitySchemes.find((ss) => ss.securitySchemeId === pathSecurityKey);
-        if (pSecurity[pathSecurityKey] && Array.isArray(pSecurity[pathSecurityKey])) {
-          pathScopes = pSecurity[pathSecurityKey].join(', ');
-        }
-        if (s) {
-          andKeyTypes.push(s.typeDisplay);
-          andSecurityKeys1.push({ ...s, ...({ scopes: pathScopes }) });
-        }
-      });
-      orSecurityKeys1.push({
-        securityTypes: andKeyTypes.length > 1 ? `${andKeyTypes[0]} + ${andKeyTypes.length - 1} more` : andKeyTypes[0],
-        securityDefs: andSecurityKeys1,
-      });
+      if (Object.keys(pSecurity).length === 0) {
+        orSecurityKeys1.push({
+          securityTypes: 'None',
+          securityDefs: [],
+        });
+      } else {
+        Object.keys(pSecurity).forEach((pathSecurityKey) => {
+          let pathScopes = '';
+          const s = this.resolvedSpec.securitySchemes.find((ss) => ss.securitySchemeId === pathSecurityKey);
+          if (pSecurity[pathSecurityKey] && Array.isArray(pSecurity[pathSecurityKey])) {
+            pathScopes = pSecurity[pathSecurityKey].join(', ');
+          }
+          if (s) {
+            andKeyTypes.push(s.typeDisplay);
+            andSecurityKeys1.push({ ...s, ...({ scopes: pathScopes }) });
+          }
+        });
+        orSecurityKeys1.push({
+          securityTypes: andKeyTypes.length > 1 ? `${andKeyTypes[0]} + ${andKeyTypes.length - 1} more` : andKeyTypes[0],
+          securityDefs: andSecurityKeys1,
+        });
+      }
     });
     return html`<div style="position:absolute; top:3px; right:2px; font-size:var(--font-size-small); line-height: 1.5;">
       <div style="position:relative; display:flex; min-width:350px; max-width:700px; justify-content: flex-end;">
-        <svg width="16" height="24">
-          <g>
-            <path style="fill: var(--fg3)" d="m13.8,8.5l0,-2.6l0,0c0,-3.2 -2.6,-5.8 -5.8,-5.8s-5.8,2.6 -5.8,5.8l0,0l0,2.6l-2.1,0l0,11.2l16,0l0,-11.2l-2.1,0l-0,0l0,0l0,0l-0,0zm-9.8,-2.6c0,0 0,0 0,0c0,-2.2 1.8,-4 4,-4c2.2,0 4,1.8 4,4c0,0 0,0 0,0l0,2.6l-8.03,0l0,-2.6l0,0l0,0z" />
-          </g>
-        </svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" fill="none" style="stroke:var(--fg3)"> <rect x="5" y="11" width="14" height="10" rx="2" /> <circle cx="12" cy="16" r="1" /> <path d="M8 11v-4a4 4 0 0 1 8 0v4" /></svg>
           ${orSecurityKeys1.map((orSecurityItem1, i) => html`
-
           ${orSecurityItem1.securityTypes
             ? html`
               ${i !== 0 ? html`<div style="padding:3px 4px;"> OR </div>` : ''}
               <div class="tooltip">
                 <div style = "padding:2px 4px; white-space:nowrap; text-overflow:ellipsis;max-width:150px; overflow:hidden;">
-                  <a part="anchor anchor-operation-security" href="#auth"> ${orSecurityItem1.securityTypes} </a>
+                  ${this.updateRoute === 'true' && this.allowAuthentication === 'true'
+                    ? html`<a part="anchor anchor-operation-security" href="#auth"> ${orSecurityItem1.securityTypes} </a>`
+                    : html`${orSecurityItem1.securityTypes}`
+                  }
                 </div>
                 <div class="tooltip-text" style="position:absolute; color: var(--fg); top:26px; right:0; border:1px solid var(--border-color);padding:2px 4px; display:block;">
                   ${orSecurityItem1.securityDefs.length > 1 ? html`<div>Requires <b>all</b> of the following </div>` : ''}
