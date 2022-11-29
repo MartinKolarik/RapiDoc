@@ -981,10 +981,8 @@ export default class ApiRequest extends LitElement {
   }
 
   apiResponseTabTemplate() {
-    let responseFormat = '';
     let responseContent = '';
     if (!this.responseIsBlob) {
-      responseFormat = 'text';
       responseContent = html`<code>${this.responseText}</code>`;
     }
     return html`
