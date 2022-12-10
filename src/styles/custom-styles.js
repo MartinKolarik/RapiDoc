@@ -11,6 +11,12 @@ export default css`
     --font-size-small: 13px;
 }
 
+
+.main-content-inner--read-mode {
+    max-width: 1248px;
+    margin: 0 auto;
+}
+
 #nav-bar-search {
     border-color: var(--nav-bg-color) !important;
 }
