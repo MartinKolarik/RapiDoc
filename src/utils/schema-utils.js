@@ -86,9 +86,6 @@ export function getTypeInfo(schema) {
         ? schema.items.enum.map((v) => (getPrintableVal(v))).join('┃')
         : '';
   }
-  if (schema.const) {
-    info.allowedValues = schema.const;
-  }
   if (dataType.match(/integer|number/g)) {
     if (schema.minimum !== undefined || schema.exclusiveMinimum !== undefined) {
       constrain += schema.minimum !== undefined ? `Min ${schema.minimum}` : `More than ${schema.exclusiveMinimum}`;
@@ -311,9 +308,9 @@ json2xml- TestCase
   <root>
     <prop1>simple</prop1>
     <prop2>
-      <0> a </0>
-      <1> b </1>
-      <2> c </2>
+      <0>a</0>
+      <1>b</1>
+      <2>c</2>
     </prop2>
     <prop3>
       <ob1>val-1</ob1>
@@ -339,11 +336,11 @@ export function json2xml(obj, level = 1) {
       continue;
     }
     if (Array.isArray(obj[prop])) {
-      xmlText = `${xmlText}\n${indent}<${tagName}> ${json2xml(obj[prop], level + 1)}\n${indent}</${tagName}>`;
+      xmlText = `${xmlText}\n${indent}<${tagName}>${json2xml(obj[prop], level + 1)}\n${indent}</${tagName}>`;
     } else if (typeof obj[prop] === 'object') {
-      xmlText = `${xmlText}\n${indent}<${tagName}> ${json2xml(obj[prop], level + 1)}\n${indent}</${tagName}>`;
+      xmlText = `${xmlText}\n${indent}<${tagName}>${json2xml(obj[prop], level + 1)}\n${indent}</${tagName}>`;
     } else {
-      xmlText = `${xmlText}\n${indent}<${tagName}> ${obj[prop].toString()} </${tagName}>`;
+      xmlText = `${xmlText}\n${indent}<${tagName}>${obj[prop].toString()}</${tagName}>`;
     }
   }
   return xmlText;
@@ -802,6 +799,9 @@ export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
       } else {
         obj[key] = schemaInObjectNotation(schema.properties[key], {}, (level + 1));
       }
+    }
+    for (const key in schema.patternProperties) {
+      obj[`[pattern: ${key}]`] = schemaInObjectNotation(schema.patternProperties[key], obj, (level + 1));
     }
     if (schema.additionalProperties) {
       obj[schema.additionalProperties?.['x-key-pattern'] || '<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});

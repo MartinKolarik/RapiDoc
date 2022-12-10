@@ -12,14 +12,14 @@ function toggleExpand(path) {
   if (path.expanded) {
     path.expanded = false; // collapse
     if (this.updateRoute === 'true') {
-      window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix === '#' ? '' : `${this.routePrefix}`}`);
+      this.replaceHistoryState('');
     }
   } else {
     path.expanded = true; // Expand
     if (this.updateRoute === 'true') {
       const newHash = `${this.routePrefix || '#'}${path.elementId}`;
       if (window.location.hash !== newHash) {
-        window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${newHash}`);
+        this.replaceHistoryState(path.elementId);
       }
     }
   }
@@ -142,6 +142,7 @@ function endpointBodyTemplate(path) {
           active-schema-tab = "${this.defaultSchemaTab}"
           fill-request-fields-with-example = "${this.fillRequestFieldsWithExample}"
           allow-try = "${this.allowTry}"
+          show-curl-before-try = "${this.showCurlBeforeTry}"
           accept = "${accept}"
           render-style="${this.renderStyle}" 
           schema-style = "${this.schemaStyle}" 
