@@ -4006,74 +4006,8 @@ customize their theme. Simply add your css to this file and yarn build.
 /* harmony default export */ const custom_styles = (i`
 :host {
     --font-size-small: 13px;
-    
-    /*--bg: #fff;*/
-    /*--bg2: #f5f6f7;*/
-    /*--bg3: #ebeced;*/
-    /*--light-bg: #cdcecf;*/
-    /*--fg: #444444;*/
-    /*--fg2: #555555;*/
-    /*--fg3: #626262;*/
-    /*--light-fg: #8a8a8a;*/
-    /*--selection-bg: #444;*/
-    /*--selection-fg: #eee;*/
-    /*--overlay-bg: rgba(0, 0, 0, 0.4);*/
-    /*--border-color: #d4d5d6;*/
-    /*--light-border-color: #e3e4e5;*/
-    /*--code-border-color: transparent;*/
-    /*--input-bg: #ffffff;*/
-    /*--placeholder-color: #9e9e9e;*/
-    /*--hover-color: #f5f6f7;*/
-    /*--red: #F06560;*/
-    /*--light-red: #fff0f0;*/
-    /*--pink: #990055;*/
-    /*--light-pink: #ffb2b2;*/
-    /*--green: #690;*/
-    /*--light-green: #fbfff0;*/
-    /*--blue: #47AFE8;*/
-    /*--light-blue: #eff8fd;*/
-    /*--orange: #FF9900;*/
-    /*--light-orange: #fff5e6;*/
-    /*--yellow: #827717;*/
-    /*--light-yellow: #fff5cc;*/
-    /*--purple: #786FF1;*/
-    /*--brown: #D4AC0D;*/
-    /*--header-bg: #464748;*/
-    /*--header-fg: #fff;*/
-    /*--header-color-darker: #323334;*/
-    /*--header-color-border: #505152;*/
-    /*--nav-bg-color: #fff;*/
-    /*--nav-text-color: #17233b;!**!*/
-    /*--nav-hover-bg-color: #fff;*/
-    /*--nav-hover-text-color: #b02907;!**!*/
-    /*--nav-accent-color: #ff7237;*/
-    /*--nav-accent-text-color: #000;*/
-    /*--nav-get-color: #47AFE8;*/
-    /*--nav-put-color: #FF9900;*/
-    /*--nav-post-color: #690;*/
-    /*--nav-delete-color: #F06560;*/
-    /*--nav-head-color: #827717;*/
-    /*--primary-color: #ff591e;*/
-    /*--primary-color-invert: #fff;*/
-    /*--primary-color-trans: rgba(255, 89, 30, 0.4);*/
-    /*--code-bg: rgba(235, 236, 237, 0.7);*/
-    /*--code-fg: #666;*/
-    /*--inline-code-fg: brown;*/
-    /*--code-property-color: #905;*/
-    /*--code-keyword-color: #07a;*/
 }
 
-/*.nav-scroll {*/
-/*    scrollbar-color: var(--border-color) transparent;*/
-/*}*/
-
-/*.nav-scroll::-webkit-scrollbar-thumb {*/
-/*    background-color: var(--border-color);*/
-/*}*/
-
-/*.nav-bar.read {*/
-/*    left: calc((100% - 1224px) / 2 - 200px)*/
-/*}*/
 
 .main-content-inner--read-mode {
     max-width: 1248px;
@@ -4118,6 +4052,10 @@ customize their theme. Simply add your css to this file and yarn build.
 
 .nav-label.false {
     display: none;
+}
+
+.response-panel table {
+    width: 100%;
 }
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
@@ -27640,7 +27578,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("16503b91ee53882657e6")
+/******/ 		__webpack_require__.h = () => ("059284edb2f5d5e9e5b3")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
