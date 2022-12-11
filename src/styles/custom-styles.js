@@ -56,4 +56,8 @@ export default css`
 .nav-label.false {
     display: none;
 }
+
+.response-panel table {
+    width: 100%;
+}
 `;
