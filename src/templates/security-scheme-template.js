@@ -16,8 +16,7 @@ export function applyApiKey(securitySchemeId, username = '', password = '', prov
   let finalApiKeyValue = '';
   if (securityObj.scheme?.toLowerCase() === 'basic') {
     if (username) {
-      finalApiKeyValue = Buffer.from(`${username}:${password}`, 'utf8').toString('base64');
-      // finalApiKeyValue = `Basic ${btoa(`${username}:${password}`)}`;
+      finalApiKeyValue = `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`;
     }
   } else if (providedApikeyVal) {
     securityObj.value = providedApikeyVal;
@@ -105,9 +104,8 @@ async function fetchAccessToken(tokenUrl, clientId, clientSecret, redirectUrl, g
     urlFormParams.append('code_verifier', codeVerifier); // for PKCE
   }
   if (sendClientSecretIn === 'header') {
-    // headers.set('Authorization', `Basic ${btoa(`${clientId}:${clientSecret}`)}`);
-    headers.set('Authorization', `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`);
-  } else {
+    headers.set('Authorization', `Basic ${Buffer.from(`${clientId}:${clientSecret}`, 'utf8').toString('base64')}`);
+  } else if (grantType !== 'authorization_code') {
     urlFormParams.append('client_id', clientId);
     urlFormParams.append('client_secret', clientSecret);
   }
@@ -258,18 +256,22 @@ async function onInvokeOAuthFlow(securitySchemeId, flowType, authUrl, tokenUrl, 
 
 /* eslint-disable indent */
 
-function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, authFlow, defaultScopes = [], receiveTokenIn = 'header') {
+function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, authFlow, defaultScopes = [], receiveTokenIn = 'header', receiveTokenInOptions = undefined) {
   let { authorizationUrl, tokenUrl, refreshUrl } = authFlow;
   const pkceOnly = authFlow['x-pkce-only'] || false;
   const isUrlAbsolute = (url) => (url.indexOf('://') > 0 || url.indexOf('//') === 0);
+  // Calculcate base URL
+  const url = new URL(this.selectedServer.computedUrl);
+  const baseUrl = url.origin;
+
   if (refreshUrl && !isUrlAbsolute(refreshUrl)) {
-    refreshUrl = `${this.selectedServer.computedUrl}/${refreshUrl.replace(/^\//, '')}`;
+    refreshUrl = `${baseUrl}/${refreshUrl.replace(/^\//, '')}`;
   }
   if (tokenUrl && !isUrlAbsolute(tokenUrl)) {
-    tokenUrl = `${this.selectedServer.computedUrl}/${tokenUrl.replace(/^\//, '')}`;
+    tokenUrl = `${baseUrl}/${tokenUrl.replace(/^\//, '')}`;
   }
   if (authorizationUrl && !isUrlAbsolute(authorizationUrl)) {
-    authorizationUrl = `${this.selectedServer.computedUrl}/${authorizationUrl.replace(/^\//, '')}`;
+    authorizationUrl = `${baseUrl}/${authorizationUrl.replace(/^\//, '')}`;
   }
   let flowNameDisplay;
   if (flowName === 'authorizationCode') {
@@ -340,16 +342,16 @@ function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, a
             <input type="text" part="textbox textbox-auth-client-id" value = "${clientId || ''}" placeholder="client-id" spellcheck="false" class="oauth2 ${flowName} ${securitySchemeId} oauth-client-id">
             ${flowName === 'authorizationCode' || flowName === 'clientCredentials' || flowName === 'password'
               ? html`
-                <input 
-                  type="password" part="textbox textbox-auth-client-secret" 
-                  value = "${clientSecret || ''}" placeholder="client-secret" spellcheck="false" 
-                  class="oauth2 ${flowName} ${securitySchemeId} 
-                  oauth-client-secret" 
+                <input
+                  type="password" part="textbox textbox-auth-client-secret"
+                  value = "${clientSecret || ''}" placeholder="client-secret" spellcheck="false"
+                  class="oauth2 ${flowName} ${securitySchemeId}
+                  oauth-client-secret"
                   style = "margin:0 5px;${pkceOnly ? 'display:none;' : ''}"
                 >
                 <select style="margin-right:5px;${pkceOnly ? 'display:none;' : ''}" class="${flowName} ${securitySchemeId} oauth-send-client-secret-in">
-                  <option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>
-                  <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>
+                   ${(!receiveTokenInOptions || receiveTokenInOptions.includes('header')) ? html`<option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>` : ''}
+                   ${(!receiveTokenInOptions || receiveTokenInOptions.includes('request-body')) ? html` <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>` : ''}
                 </select>`
               : ''
             }
@@ -481,6 +483,7 @@ export default function securitySchemeTemplate() {
                         v.flows[f],
                         (v.flows[f]['x-default-scopes'] || v['x-default-scopes']),
                         (v.flows[f]['x-receive-token-in'] || v['x-receive-token-in']),
+                        (v.flows[f]['x-receive-token-in-options'] || v['x-receive-token-in-options']),
                       ))}
                   </td>
                 </tr>
