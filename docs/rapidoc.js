@@ -4002,7 +4002,6 @@ pre[class*="language-"] {
 #api-info {
   font-size: calc(var(--font-size-regular) - 1px);
   margin-top: 8px;
-  margin-left: -15px;
 }
 
 #api-info span:before {
@@ -4025,8 +4024,64 @@ This file is reserved for any custom css that developers want to add to
 customize their theme. Simply add your css to this file and yarn build.
 */
 
+// language=CSS
 /* harmony default export */ const custom_styles = (i`
+:host {
+    --font-size-small: 13px;
+}
 
+.main-content-inner--read-mode {
+    max-width: 1248px;
+    margin: 0 auto;
+}
+
+#nav-bar-search {
+    border-color: var(--nav-bg-color) !important;
+}
+
+#nav-bar-search + div {
+    display: none;
+}
+
+.nav-bar > div:first-of-type {
+    padding: 8px 14px 12px 15px !important;
+}
+
+.nav-bar-path {
+    font-size: calc(var(--font-size-small) + 0px);
+}
+
+.main-content-inner--view-mode {
+    padding: 0 12px;
+}
+
+@media (max-width: 1023px) {
+    .main-content-inner--view-mode .endpoint-head .method {
+        display: none;
+    }
+}
+
+.nav-label {
+   padding: 1px 4px;
+   border-radius: 4px;
+   font-size: calc(var(--font-size-small) - 2px);
+   white-space: nowrap;
+   background-color: var(--blue);
+   margin: 0 10px 0 auto;
+   color: #fff
+}
+
+.nav-label.false {
+    display: none;
+}
+
+.response-panel table {
+    width: 100%;
+}
+
+#api-description {
+    display: none;
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -11820,7 +11875,8 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
     description: v.description || '',
     headers: v.description ? getHeadersFromMarkdown(v.description) : [],
     paths: [],
-    expanded: v['x-tag-expanded'] !== false
+    expanded: v['x-tag-expanded'] !== false,
+    xLabels: v['x-labels'] || undefined
   })) : [];
   const pathsAndWebhooks = openApiSpec.paths || {};
   if (openApiSpec.webhooks) {
@@ -11864,7 +11920,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
           }
           tagObj = tags.find(v => v.name === tag);
           if (!tagObj) {
-            var _specTagsItem, _specTagsItem2;
+            var _specTagsItem, _specTagsItem2, _specTagsItem3;
             tagObj = {
               show: true,
               elementId: `tag--${tag.replace(invalidCharsRegEx, '-')}`,
@@ -11872,7 +11928,8 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
               description: ((_specTagsItem = specTagsItem) === null || _specTagsItem === void 0 ? void 0 : _specTagsItem.description) || '',
               headers: (_specTagsItem2 = specTagsItem) !== null && _specTagsItem2 !== void 0 && _specTagsItem2.description ? getHeadersFromMarkdown(specTagsItem.description) : [],
               paths: [],
-              expanded: specTagsItem ? specTagsItem['x-tag-expanded'] !== false : true
+              expanded: specTagsItem ? specTagsItem['x-tag-expanded'] !== false : true,
+              xLabels: ((_specTagsItem3 = specTagsItem) === null || _specTagsItem3 === void 0 ? void 0 : _specTagsItem3['x-labels']) || undefined
             };
             tags.push(tagObj);
           }
@@ -11930,6 +11987,7 @@ function groupByTags(openApiSpec, sortEndpointsBy, generateMissingTags = false, 
             // commonSummary: commonPathProp.summary,
             // commonDescription: commonPathProp.description,
             xBadges: pathOrHookObj['x-badges'] || undefined,
+            xLabels: pathOrHookObj['x-labels'] || undefined,
             xCodeSamples: pathOrHookObj['x-codeSamples'] || pathOrHookObj['x-code-samples'] || ''
           });
         }); // End of tag path create
@@ -12235,7 +12293,7 @@ async function onInvokeOAuthFlow(securitySchemeId, flowType, authUrl, tokenUrl, 
 
 /* eslint-disable indent */
 
-function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, authFlow, defaultScopes = [], receiveTokenIn = 'header') {
+function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, authFlow, defaultScopes = [], receiveTokenIn = 'header', receiveTokenInOptions = undefined) {
   let {
     authorizationUrl,
     tokenUrl,
@@ -12312,8 +12370,8 @@ function oAuthFlowTemplate(flowName, clientId, clientSecret, securitySchemeId, a
                   style = "margin:0 5px;${pkceOnly ? 'display:none;' : ''}"
                 >
                 <select style="margin-right:5px;${pkceOnly ? 'display:none;' : ''}" class="${flowName} ${securitySchemeId} oauth-send-client-secret-in">
-                  <option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>
-                  <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>
+                   ${!receiveTokenInOptions || receiveTokenInOptions.includes('header') ? y`<option value = 'header' .selected = ${receiveTokenIn === 'header'} > Authorization Header </option>` : ''}
+                   ${!receiveTokenInOptions || receiveTokenInOptions.includes('request-body') ? y` <option value = 'request-body' .selected = ${receiveTokenIn === 'request-body'}> Request Body </option>` : ''}
                 </select>` : ''}
             ${flowName === 'authorizationCode' || flowName === 'clientCredentials' || flowName === 'implicit' || flowName === 'password' ? y`
                 <button class="m-btn thin-border" part="btn btn-outline"
@@ -12417,7 +12475,7 @@ function securitySchemeTemplate() {
             ${v.type.toLowerCase() === 'oauth2' ? y`
                 <tr>
                   <td style="border:none; padding-left:48px">
-                    ${Object.keys(v.flows).map(f => oAuthFlowTemplate.call(this, f, v.flows[f]['x-client-id'] || v['x-client-id'] || '', v.flows[f]['x-client-secret'] || v['x-client-secret'] || '', v.securitySchemeId, v.flows[f], v.flows[f]['x-default-scopes'] || v['x-default-scopes'], v.flows[f]['x-receive-token-in'] || v['x-receive-token-in']))}
+                    ${Object.keys(v.flows).map(f => oAuthFlowTemplate.call(this, f, v.flows[f]['x-client-id'] || v['x-client-id'] || '', v.flows[f]['x-client-secret'] || v['x-client-secret'] || '', v.securitySchemeId, v.flows[f], v.flows[f]['x-default-scopes'] || v['x-default-scopes'], v.flows[f]['x-receive-token-in'] || v['x-receive-token-in'], v.flows[f]['x-receive-token-in-options'] || v['x-receive-token-in-options']))}
                   </td>
                 </tr>
                 ` : ''}
@@ -13545,7 +13603,8 @@ function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
       obj[`[pattern: ${key}]`] = schemaInObjectNotation(schema.patternProperties[key], obj, level + 1);
     }
     if (schema.additionalProperties) {
-      obj['[any-key]'] = schemaInObjectNotation(schema.additionalProperties, {});
+      var _schema$additionalPro;
+      obj[((_schema$additionalPro = schema.additionalProperties) === null || _schema$additionalPro === void 0 ? void 0 : _schema$additionalPro['x-key-pattern']) || '<any-key>'] = schemaInObjectNotation(schema.additionalProperties, {});
     }
   } else if (schema.type === 'array' || schema.items) {
     var _schema$items5;
@@ -15466,23 +15525,9 @@ class ApiRequest extends lit_element_s {
       `;
   }
   apiResponseTabTemplate() {
-    let responseFormat = '';
     let responseContent = '';
     if (!this.responseIsBlob) {
-      if (this.responseHeaders.includes('application/x-ndjson')) {
-        responseFormat = 'json';
-        const prismLines = this.responseText.split('\n').map(q => prism_default().highlight(q, (prism_default()).languages[responseFormat], responseFormat)).join('\n');
-        responseContent = y`<code>${unsafe_html_o(prismLines)}</code>`;
-      } else if (this.responseHeaders.includes('json')) {
-        responseFormat = 'json';
-        responseContent = y`<code>${unsafe_html_o(prism_default().highlight(this.responseText, (prism_default()).languages[responseFormat], responseFormat))}</code>`;
-      } else if (this.responseHeaders.includes('html') || this.responseHeaders.includes('xml')) {
-        responseFormat = 'html';
-        responseContent = y`<code>${unsafe_html_o(prism_default().highlight(this.responseText, (prism_default()).languages[responseFormat], responseFormat))}</code>`;
-      } else {
-        responseFormat = 'text';
-        responseContent = y`<code>${this.responseText}</code>`;
-      }
+      responseContent = y`<code>${this.responseText}</code>`;
     }
     return y`
       <div class="row" style="font-size:var(--font-size-small); margin:5px 0">
@@ -17071,7 +17116,7 @@ function overviewTemplate() {
                   <button class="m-btn thin-border" style="min-width:170px" part="btn btn-outline" @click='${e => {
     downloadResource(this.specUrl, 'openapi-spec', e);
   }}'>Download OpenAPI spec</button>
-                  ${(_this$specUrl = this.specUrl) !== null && _this$specUrl !== void 0 && _this$specUrl.trim().toLowerCase().endsWith('json') ? y`<button class="m-btn thin-border" style="width:200px" part="btn btn-outline" @click='${e => {
+                  ${(_this$specUrl = this.specUrl) !== null && _this$specUrl !== void 0 && _this$specUrl.trim().toLowerCase().endsWith('json') ? y`<button class="m-btn thin-border" part="btn btn-outline" @click='${e => {
     viewResource(this.specUrl, e);
   }}'>View OpenAPI spec (New Tab)</button>` : ''}
                 </div>` : ''}
@@ -17276,7 +17321,7 @@ function navbarTemplate() {
                   style = 'width:100%; padding-right:20px; color:var(--nav-hover-text-color); border-color:var(--nav-accent-color); background-color:var(--nav-hover-bg-color)'
                   type = 'text'
                   placeholder = 'Filter' 
-                  @change = '${this.onSearchChange}'
+                  @input = '${this.onSearchChange}'
                   spellcheck = 'false'
                 >
                 <div style='margin: 6px 5px 0 -24px; font-size:var(--font-size-regular); cursor:pointer;'>&#x21a9;</div>
@@ -17351,7 +17396,12 @@ function navbarTemplate() {
                   data-first-path-id='${tag.firstPathId}'
                   tabindex='0'
                 >
-                  <div style="pointer-events:none;">${tag.name}</div>
+                  <div style="display: flex; width: 100%; pointer-events: none;">
+                    <span>${tag.name}</span>
+                    ${y`<span class="nav-label ${tag.xLabels && tag.xLabels.find(l => l.toLowerCase() === 'new') || 'false'}">
+                      NEW
+                    </span>`}
+                  </div>
                   <div class='nav-bar-tag-icon' tabindex='0' data-action='expand-collapse-tag'></div>
                 </div>
               `}
@@ -17384,12 +17434,15 @@ function navbarTemplate() {
                 id='link-${p.elementId}'
                 tabindex='0'
               >
-                <span style = 'display:flex; pointer-events: none; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}'>
+                <span style = 'display:flex; pointer-events: none; align-items:start; ${p.deprecated ? 'filter:opacity(0.5)' : ''}; width: 100%;'>
                   ${y`<span class='nav-method ${this.showMethodInNavBar} ${p.method}' style='pointer-events: none;'>
                       ${this.showMethodInNavBar === 'as-colored-block' ? p.method.substring(0, 3).toUpperCase() : p.method.toUpperCase()}
                     </span>`}
                   ${p.isWebhook ? y`<span style='font-weight:bold; pointer-events: none; margin-right:8px; font-size: calc(var(--font-size-small) - 2px)'>WEBHOOK</span>` : ''}
                   ${this.usePathInNavBar === 'true' ? y`<span style='pointer-events: none;' class='mono-font'>${p.path}</span>` : p.summary || p.shortSummary}
+                  ${y`<span class="nav-label ${p.xLabels && p.xLabels.find(l => l.toLowerCase() === 'new') || 'false'}">
+                    NEW
+                  </span>`}
                 </span>
               </div>`)}
             </div>
@@ -18511,7 +18564,7 @@ class RapiDoc extends lit_element_s {
       root: this.getRootNode().host,
       rootMargin: '-50px 0px -50px 0px',
       // when the element is visible 100px from bottom
-      threshold: 0
+      threshold: [0, 1]
     };
     this.showSummaryWhenCollapsed = true;
     // Will activate intersection observer only after spec load and hash analyze
@@ -18520,6 +18573,7 @@ class RapiDoc extends lit_element_s {
     this.intersectionObserver = new IntersectionObserver(entries => {
       this.onIntersect(entries);
     }, intersectionObserverOptions);
+    this.st = 0;
   }
   static get properties() {
     return {
@@ -19604,23 +19658,44 @@ class RapiDoc extends lit_element_s {
     if (this.isIntersectionObserverActive === false) {
       return;
     }
+    const st = this.shadowRoot.querySelector('.main-content').scrollTop;
+    const direction = st > this.st ? 1 : -1;
+    this.st = st;
     entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio > 0) {
-        const oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
-        const newNavEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
-
-        // Add active class in the new element
-        if (newNavEl) {
-          if (this.updateRoute === 'true') {
-            this.replaceHistoryState(entry.target.id);
-          }
-          newNavEl.scrollIntoView({
-            behavior: 'auto',
-            block: 'center'
-          });
-          newNavEl.classList.add('active');
-          newNavEl.part.add('section-navbar-active-item');
+      let oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
+      const allNavEl = Array.from(this.shadowRoot.querySelectorAll('.nav-bar-tag, .nav-bar-path, .nav-bar-info, .nav-bar-h1, .nav-bar-h2, .operations'));
+      const targetEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
+      let newNavEl;
+      if (!oldNavEl) {
+        // eslint-disable-next-line prefer-destructuring
+        oldNavEl = allNavEl[0];
+      }
+      let currentI = allNavEl.findIndex(el => el === oldNavEl);
+      const targetI = allNavEl.findIndex(el => el === targetEl);
+      if (entry.boundingClientRect.y < 64 && direction === 1) {
+        if (!entry.isIntersecting && targetI >= currentI) {
+          currentI++;
+          newNavEl = allNavEl[currentI];
         }
+      } else if (direction === -1 && (targetI < currentI || targetI === currentI && !entry.isIntersecting)) {
+        currentI--;
+        newNavEl = allNavEl[currentI];
+      } else if (targetI === 0 && direction === -1) {
+        currentI = 0;
+        newNavEl = allNavEl[currentI];
+      }
+
+      // Add active class in the new element
+      if (newNavEl) {
+        if (this.updateRoute === 'true') {
+          this.replaceHistoryState(newNavEl.getAttribute('data-content-id'));
+        }
+        newNavEl.scrollIntoView({
+          behavior: 'auto',
+          block: 'center'
+        });
+        newNavEl.classList.add('active');
+        newNavEl.part.add('section-navbar-active-item');
 
         // Remove active class from previous element
         // if it is different from the new one (edge case on loading in read render style)
@@ -26674,7 +26749,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("0b1edbce53e209316ddc")
+/******/ 		__webpack_require__.h = () => ("becd6f11f3e607aa1f2a")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
