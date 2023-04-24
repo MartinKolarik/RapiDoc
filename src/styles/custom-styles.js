@@ -11,7 +11,6 @@ export default css`
     --font-size-small: 13px;
 }
 
-
 .main-content-inner--read-mode {
     max-width: 1248px;
     margin: 0 auto;
@@ -59,5 +58,9 @@ export default css`
 
 .response-panel table {
     width: 100%;
+}
+
+#api-description {
+    display: none;
 }
 `;
