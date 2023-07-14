@@ -14254,6 +14254,9 @@ class SchemaTree extends lit_element_s {
     const newSchemaLevel = (_data$Type = data['::type']) !== null && _data$Type !== void 0 && _data$Type.startsWith('xxx-of') ? schemaLevel : schemaLevel + 1;
     // const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' ? indentLevel : (indentLevel + 1);
     const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' || key.startsWith('::OPTION') ? indentLevel : indentLevel + 1;
+    const xxxOfChild = Object.keys(data).some(k => k.startsWith('::ANY~OF') || k.startsWith('::ONE~OF'));
+    const originalSchemaLevel = schemaLevel;
+    schemaLevel = xxxOfChild ? 0 : schemaLevel;
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
         if (schemaLevel < this.schemaExpandLevel) {
@@ -14288,12 +14291,16 @@ class SchemaTree extends lit_element_s {
         closeBracket = ']';
       }
     }
+    if (xxxOfChild) {
+      openBracket = '';
+      closeBracket = '';
+    }
     if (typeof data === 'object') {
       var _data$Type2;
       return y`
         <div class="tr ${schemaLevel < this.schemaExpandLevel || (_data$Type2 = data['::type']) !== null && _data$Type2 !== void 0 && _data$Type2.startsWith('xxx-of') ? 'expanded' : 'collapsed'} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
           <div class="td key ${data['::deprecated'] ? 'deprecated' : ''}" style='min-width:${minFieldColWidth}px'>
-            ${data['::type'] === 'xxx-of-option' || data['::type'] === 'xxx-of-array' || key.startsWith('::OPTION') ? y`<span class='key-label xxx-of-key'> ${keyLabel}</span><span class="xxx-of-descr">${keyDescr}</span>` : keyLabel === '::props' || keyLabel === '::ARRAY~OF' ? '' : schemaLevel > 0 ? y`<span class="key-label" title="${readOrWrite === 'readonly' ? 'Read-Only' : readOrWrite === 'writeonly' ? 'Write-Only' : ''}">
+            ${data['::type'] === 'xxx-of-option' || data['::type'] === 'xxx-of-array' || key.startsWith('::OPTION') ? y`<span class='key-label xxx-of-key'> ${keyLabel}</span><span class="xxx-of-descr">${keyDescr}</span>` : keyLabel === '::props' || keyLabel === '::ARRAY~OF' ? '' : originalSchemaLevel > 0 ? y`<span class="key-label" title="${readOrWrite === 'readonly' ? 'Read-Only' : readOrWrite === 'writeonly' ? 'Write-Only' : ''}">
                       ${data['::deprecated'] ? '✗' : ''}
                       ${keyLabel.replace(/\*$/, '')}${keyLabel.endsWith('*') ? y`<span style="color:var(--red)">*</span>` : ''}${readOrWrite === 'readonly' ? y` 🆁` : readOrWrite === 'writeonly' ? y` 🆆` : readOrWrite}:
                     </span>` : ''}
@@ -26749,7 +26756,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("becd6f11f3e607aa1f2a")
+/******/ 		__webpack_require__.h = () => ("f13a6f4e7be393603e69")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
