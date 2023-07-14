@@ -176,6 +176,10 @@ export default class SchemaTree extends LitElement {
     const newSchemaLevel = data['::type']?.startsWith('xxx-of') ? schemaLevel : (schemaLevel + 1);
     // const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' ? indentLevel : (indentLevel + 1);
     const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' || key.startsWith('::OPTION') ? indentLevel : (indentLevel + 1);
+    const xxxOfChild = Object.keys(data).some((k) => k.startsWith('::ANY~OF') || k.startsWith('::ONE~OF'));
+    const originalSchemaLevel = schemaLevel;
+    schemaLevel = xxxOfChild ? 0 : schemaLevel;
+
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
         if (schemaLevel < this.schemaExpandLevel) {
@@ -210,6 +214,12 @@ export default class SchemaTree extends LitElement {
         closeBracket = ']';
       }
     }
+
+    if (xxxOfChild) {
+      openBracket = '';
+      closeBracket = '';
+    }
+
     if (typeof data === 'object') {
       return html`
         <div class="tr ${schemaLevel < this.schemaExpandLevel || data['::type']?.startsWith('xxx-of') ? 'expanded' : 'collapsed'} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
@@ -218,7 +228,7 @@ export default class SchemaTree extends LitElement {
               ? html`<span class='key-label xxx-of-key'> ${keyLabel}</span><span class="xxx-of-descr">${keyDescr}</span>`
               : keyLabel === '::props' || keyLabel === '::ARRAY~OF'
                 ? ''
-                : schemaLevel > 0
+                : originalSchemaLevel > 0
                   ? html`<span class="key-label" title="${readOrWrite === 'readonly' ? 'Read-Only' : readOrWrite === 'writeonly' ? 'Write-Only' : ''}">
                       ${data['::deprecated'] ? '✗' : ''}
                       ${keyLabel.replace(/\*$/, '')}${keyLabel.endsWith('*') ? html`<span style="color:var(--red)">*</span>` : ''}${readOrWrite === 'readonly' ? html` 🆁` : readOrWrite === 'writeonly' ? html` 🆆` : readOrWrite}:
