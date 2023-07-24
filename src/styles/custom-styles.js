@@ -61,6 +61,6 @@ export default css`
 }
 
 #api-description {
-    display: none;
+    padding: 20px 0 20px;
 }
 `;
