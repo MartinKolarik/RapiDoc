@@ -4080,7 +4080,7 @@ customize their theme. Simply add your css to this file and yarn build.
 }
 
 #api-description {
-    display: none;
+    padding: 20px 0 20px;
 }
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
@@ -26756,7 +26756,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("f13a6f4e7be393603e69")
+/******/ 		__webpack_require__.h = () => ("32715d557cc44d0dda84")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
