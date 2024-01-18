@@ -63,4 +63,11 @@ export default css`
 #api-description {
     padding: 20px 0 20px;
 }
+
+#auth-table code {
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: var(--inline-code-fg);
+    background-color: var(--bg3);
+}
 `;
