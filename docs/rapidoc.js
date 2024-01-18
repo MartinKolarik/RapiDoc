@@ -4082,6 +4082,13 @@ customize their theme. Simply add your css to this file and yarn build.
 #api-description {
     padding: 20px 0 20px;
 }
+
+#auth-table code {
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: var(--inline-code-fg);
+    background-color: var(--bg3);
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -12441,7 +12448,7 @@ function securitySchemeTemplate() {
 
                 ${v.type.toLowerCase() === 'apikey' || v.type.toLowerCase() === 'http' && v.scheme.toLowerCase() === 'bearer' ? y`
                     <div style="margin-bottom:5px">
-                      ${v.type.toLowerCase() === 'apikey' ? y`Send <code>${v.name}</code> in <code>${v.in}</code>` : y`Send <code>Authorization</code> in <code>header</code> containing the word <code>Bearer</code> followed by a space and a Token String.`}
+                      ${v.type.toLowerCase() === 'apikey' ? y`Send <code>${v.name}</code> in <code>${v.in}</code>` : y`Send a header in the format <code>Authorization: Bearer YOUR-TOKEN</code>`}
                     </div>
                     <div style="max-height:28px;">
                       ${v.in !== 'cookie' ? y`
@@ -15613,7 +15620,7 @@ class ApiRequest extends lit_element_s {
           ${((_this$security = this.security) === null || _this$security === void 0 ? void 0 : _this$security.length) > 0 ? y`
               ${this.api_keys.length > 0 ? y`<div style="color:var(--blue); overflow:hidden;"> 
                     ${this.api_keys.length === 1 ? `${(_this$api_keys$ = this.api_keys[0]) === null || _this$api_keys$ === void 0 ? void 0 : _this$api_keys$.typeDisplay} in ${this.api_keys[0].in}` : `${this.api_keys.length} API keys applied`} 
-                  </div>` : y`<div class="gray-text">Required  <span style="color:var(--red)">(None Applied)</span>`}` : y`<span class="gray-text"> Not Required </span>`}
+                  </div>` : y`<div class="gray-text">${this.security.some(i => Object.keys(i).length === 0) ? 'Optional' : 'Required'} <span style="color:var(--red)">(None Applied)</span>`}` : y`<span class="gray-text"> Not Supported </span>`}
         </div>
       </div>
       ${this.parameters.length > 0 || this.request_body ? y`
@@ -26756,7 +26763,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("32715d557cc44d0dda84")
+/******/ 		__webpack_require__.h = () => ("d22022111473dd72409c")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
