@@ -1103,9 +1103,9 @@ export default class ApiRequest extends LitElement {
                       : `${this.api_keys.length} API keys applied`
                     } 
                   </div>`
-                : html`<div class="gray-text">Required  <span style="color:var(--red)">(None Applied)</span>`
+                : html`<div class="gray-text">${this.security.some((i) => Object.keys(i).length === 0) ? 'Optional' : 'Required'} <span style="color:var(--red)">(None Applied)</span>`
               }`
-            : html`<span class="gray-text"> Not Required </span>`
+            : html`<span class="gray-text"> Not Supported </span>`
           }
         </div>
       </div>
