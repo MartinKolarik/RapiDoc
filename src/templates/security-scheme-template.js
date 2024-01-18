@@ -433,7 +433,7 @@ export default function securitySchemeTemplate() {
                     <div style="margin-bottom:5px">
                       ${v.type.toLowerCase() === 'apikey'
                         ? html`Send <code>${v.name}</code> in <code>${v.in}</code>`
-                        : html`Send <code>Authorization</code> in <code>header</code> containing the word <code>Bearer</code> followed by a space and a Token String.`
+                        : html`Send a header in the format <code>Authorization: Bearer YOUR-TOKEN</code>`
                       }
                     </div>
                     <div style="max-height:28px;">
