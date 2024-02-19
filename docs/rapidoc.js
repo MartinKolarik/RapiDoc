@@ -4083,11 +4083,36 @@ customize their theme. Simply add your css to this file and yarn build.
     padding: 20px 0 20px;
 }
 
+#auth {
+    margin-top: 0;
+    padding-top: 0;
+}
+
 #auth-table code {
     padding: 1px 6px;
     border-radius: 2px;
     color: var(--inline-code-fg);
     background-color: var(--bg3);
+}
+
+.expanded-endpoint-body > h2:first-of-type {
+    margin-top: 0;
+}
+
+section[part="section-tag"] + .section-gap--read-mode {
+    padding-top: 0;
+}
+
+.example .m-markdown-small {
+    padding: 10px 0 !important;
+}
+
+blockquote > p:first-of-type {
+    margin-top: 0;
+}
+
+blockquote > p:last-of-type {
+    margin-bottom: 0;
 }
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
@@ -16737,7 +16762,7 @@ class ApiResponse extends lit_element_s {
       var _v$schema, _v$schema2;
       return y`
           <tr>
-            <td style="padding:8px; vertical-align: baseline; min-width:120px; border-top: 1px solid var(--light-border-color); text-overflow: ellipsis;">
+            <td style="padding:8px; vertical-align: baseline; min-width:170px; border-top: 1px solid var(--light-border-color); text-overflow: ellipsis;">
               ${v.name || ''}
             </td> 
             <td style="padding:4px; vertical-align: baseline; padding:0 5px; border-top: 1px solid var(--light-border-color); text-overflow: ellipsis;">
@@ -26763,7 +26788,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("d22022111473dd72409c")
+/******/ 		__webpack_require__.h = () => ("69eccd52551196a661bc")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
