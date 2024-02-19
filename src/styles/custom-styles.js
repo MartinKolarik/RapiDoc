@@ -64,10 +64,35 @@ export default css`
     padding: 20px 0 20px;
 }
 
+#auth {
+    margin-top: 0;
+    padding-top: 0;
+}
+
 #auth-table code {
     padding: 1px 6px;
     border-radius: 2px;
     color: var(--inline-code-fg);
     background-color: var(--bg3);
+}
+
+.expanded-endpoint-body > h2:first-of-type {
+    margin-top: 0;
+}
+
+section[part="section-tag"] + .section-gap--read-mode {
+    padding-top: 0;
+}
+
+.example .m-markdown-small {
+    padding: 10px 0 !important;
+}
+
+blockquote > p:first-of-type {
+    margin-top: 0;
+}
+
+blockquote > p:last-of-type {
+    margin-bottom: 0;
 }
 `;
