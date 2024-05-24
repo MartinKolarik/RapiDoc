@@ -16947,7 +16947,7 @@ function expandedEndpointBodyTemplate(path, tagName = '', tagDescription = '') {
       ${path.deprecated ? y`<div class="bold-text red-text"> DEPRECATED </div>` : ''}
       ${y`
         ${path.xBadges && ((_path$xBadges = path.xBadges) === null || _path$xBadges === void 0 ? void 0 : _path$xBadges.length) > 0 ? y`
-            <div style="display:flex; flex-wrap:wrap; margin-bottom: -24px; font-size: var(--font-size-small);">
+            <div style="display:flex; flex-wrap:wrap; font-size: var(--font-size-small);">
               ${path.xBadges.map(v => y`<span style="margin:1px; margin-right:5px; padding:1px 8px; font-weight:bold; border-radius:12px;  background-color: var(--light-${v.color}, var(--input-bg)); color:var(--${v.color}); border:1px solid var(--${v.color})">${v.label}</span>`)}
             </div>
             ` : ''}
@@ -26788,7 +26788,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("69eccd52551196a661bc")
+/******/ 		__webpack_require__.h = () => ("976d07c7bf294c905419")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
