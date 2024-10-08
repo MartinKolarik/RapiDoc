@@ -99,4 +99,12 @@ blockquote > p:last-of-type {
 .oauth-flow {
     display: none;
 }
+
+.m-markdown table {
+    width: 100%;
+}
+
+.m-markdown table th {
+    text-align: left;
+}
 `;
