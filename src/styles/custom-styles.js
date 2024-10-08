@@ -95,4 +95,8 @@ blockquote > p:first-of-type {
 blockquote > p:last-of-type {
     margin-bottom: 0;
 }
+
+.oauth-flow {
+    display: none;
+}
 `;
