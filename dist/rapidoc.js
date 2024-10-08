@@ -4118,6 +4118,14 @@ blockquote > p:last-of-type {
 .oauth-flow {
     display: none;
 }
+
+.m-markdown table {
+    width: 100%;
+}
+
+.m-markdown table th {
+    text-align: left;
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -26792,7 +26800,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("9d68357484654f9b51b2")
+/******/ 		__webpack_require__.h = () => ("702a2bf9f489e4f8c0cf")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
