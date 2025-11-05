@@ -183,41 +183,52 @@ export default class SchemaTree extends LitElement {
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = html`<span class="open-bracket array-of-object" >[{</span>`;
+          if (xxxOfChild) {
+            openBracket = html`<span class="open-bracket array-of-object" >[</span>`;
+          } else {
+            openBracket = html`<span class="open-bracket array-of-object" >[{</span>`;
+          }
         } else {
           openBracket = html`<span class="open-bracket array-of-object">[{...}]</span>`;
         }
-        closeBracket = '}]';
+        closeBracket = xxxOfChild ? ']' : '}]';
       } else {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = html`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{</span>`;
+          if (xxxOfChild) {
+            openBracket = html`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}</span>`;
+          } else {
+            openBracket = html`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{</span>`;
+          }
         } else {
           openBracket = html`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{...}</span>`;
         }
-        closeBracket = '}';
+        closeBracket = xxxOfChild ? '' : '}';
       }
     } else if (data['::type'] === 'array') {
       if (dataType === 'array') {
         const arrType = arrayType !== 'object' ? arrayType : '';
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = html`<span class="open-bracket array-of-array" data-array-type="${arrType}">[[ ${arrType} </span>`;
+          if (xxxOfChild) {
+            openBracket = html`<span class="open-bracket array-of-array" data-array-type="${arrType}">[ ${arrType} </span>`;
+          } else {
+            openBracket = html`<span class="open-bracket array-of-array" data-array-type="${arrType}">[[ ${arrType} </span>`;
+          }
         } else {
           openBracket = html`<span class="open-bracket array-of-array"  data-array-type="${arrType}">[[...]]</span>`;
         }
-        closeBracket = ']]';
+        closeBracket = xxxOfChild ? ']' : ']]';
       } else {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = html`<span class="open-bracket array">[</span>`;
+          if (xxxOfChild) {
+            openBracket = html`<span class="open-bracket array"></span>`;
+          } else {
+            openBracket = html`<span class="open-bracket array">[</span>`;
+          }
         } else {
           openBracket = html`<span class="open-bracket array">[...]</span>`;
         }
-        closeBracket = ']';
+        closeBracket = xxxOfChild ? '' : ']';
       }
-    }
-
-    if (xxxOfChild) {
-      openBracket = '';
-      closeBracket = '';
     }
 
     if (typeof data === 'object') {
