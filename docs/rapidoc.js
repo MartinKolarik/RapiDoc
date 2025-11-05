@@ -4114,6 +4114,18 @@ blockquote > p:first-of-type {
 blockquote > p:last-of-type {
     margin-bottom: 0;
 }
+
+.oauth-flow {
+    display: none;
+}
+
+.m-markdown table {
+    width: 100%;
+}
+
+.m-markdown table th {
+    text-align: left;
+}
 `);
 ;// CONCATENATED MODULE: ./src/utils/common-utils.js
 /* For Delayed Event Handler Execution */
@@ -14292,40 +14304,52 @@ class SchemaTree extends lit_element_s {
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = y`<span class="open-bracket array-of-object" >[{</span>`;
+          if (xxxOfChild) {
+            openBracket = y`<span class="open-bracket array-of-object" >[</span>`;
+          } else {
+            openBracket = y`<span class="open-bracket array-of-object" >[{</span>`;
+          }
         } else {
           openBracket = y`<span class="open-bracket array-of-object">[{...}]</span>`;
         }
-        closeBracket = '}]';
+        closeBracket = xxxOfChild ? ']' : '}]';
       } else {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = y`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{</span>`;
+          if (xxxOfChild) {
+            openBracket = y`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}</span>`;
+          } else {
+            openBracket = y`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{</span>`;
+          }
         } else {
           openBracket = y`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}{...}</span>`;
         }
-        closeBracket = '}';
+        closeBracket = xxxOfChild ? '' : '}';
       }
     } else if (data['::type'] === 'array') {
       if (dataType === 'array') {
         const arrType = arrayType !== 'object' ? arrayType : '';
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = y`<span class="open-bracket array-of-array" data-array-type="${arrType}">[[ ${arrType} </span>`;
+          if (xxxOfChild) {
+            openBracket = y`<span class="open-bracket array-of-array" data-array-type="${arrType}">[ ${arrType} </span>`;
+          } else {
+            openBracket = y`<span class="open-bracket array-of-array" data-array-type="${arrType}">[[ ${arrType} </span>`;
+          }
         } else {
           openBracket = y`<span class="open-bracket array-of-array"  data-array-type="${arrType}">[[...]]</span>`;
         }
-        closeBracket = ']]';
+        closeBracket = xxxOfChild ? ']' : ']]';
       } else {
         if (schemaLevel < this.schemaExpandLevel) {
-          openBracket = y`<span class="open-bracket array">[</span>`;
+          if (xxxOfChild) {
+            openBracket = y`<span class="open-bracket array"></span>`;
+          } else {
+            openBracket = y`<span class="open-bracket array">[</span>`;
+          }
         } else {
           openBracket = y`<span class="open-bracket array">[...]</span>`;
         }
-        closeBracket = ']';
+        closeBracket = xxxOfChild ? '' : ']';
       }
-    }
-    if (xxxOfChild) {
-      openBracket = '';
-      closeBracket = '';
     }
     if (typeof data === 'object') {
       var _data$Type2;
@@ -26788,7 +26812,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("976d07c7bf294c905419")
+/******/ 		__webpack_require__.h = () => ("199c1cbe01c2d734db32")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
