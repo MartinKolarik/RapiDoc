@@ -13484,6 +13484,9 @@ function generateMarkdownForArrayAndObjectDescription(schema, level = 0) {
  * @param {number} level - recursion level
  * @param {string} suffix - used for suffixing property names to avoid duplicate props during object composion
  */
+function hasExpandedChild(value) {
+  return Object.values(value).some(child => child && typeof child === 'object' && child['::expanded'] === true);
+}
 function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
   if (!schema) {
     return;
@@ -13549,6 +13552,9 @@ function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
         objWithAnyOfProps['::type'] = 'xxx-of-option';
       }
     });
+    if (hasExpandedChild(objWithAnyOfProps)) {
+      objWithAnyOfProps['::expanded'] = true;
+    }
     obj[schema.anyOf ? `::ANY~OF ${suffix}` : `::ONE~OF ${suffix}`] = objWithAnyOfProps;
     // obj['::type'] = 'object';
     obj['::type'] = 'object';
@@ -13612,17 +13618,27 @@ function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
               objTypeOption[key] = schemaInObjectNotation(schema.properties[key], {}, level + 1);
             }
           }
+          if (schema['x-schema-expanded'] === true || hasExpandedChild(objTypeOption)) {
+            objTypeOption['::expanded'] = true;
+          }
           multiTypeOptions[`::OPTION~${i + 1}`] = objTypeOption;
         } else if (v === 'array') {
-          multiTypeOptions[`::OPTION~${i + 1}`] = {
+          const arrayTypeOption = {
             '::title': schema.title || '',
             '::description': schema.description || '',
             '::type': 'array',
             '::props': schemaInObjectNotation(schema.items, {}, level + 1)
           };
+          if (schema['x-schema-expanded'] === true || hasExpandedChild(arrayTypeOption)) {
+            arrayTypeOption['::expanded'] = true;
+          }
+          multiTypeOptions[`::OPTION~${i + 1}`] = arrayTypeOption;
         }
       });
       multiTypeOptions[`::OPTION~${complexTypes.length + 1}`] = ((_multiPrimitiveTypes2 = multiPrimitiveTypes) === null || _multiPrimitiveTypes2 === void 0 ? void 0 : _multiPrimitiveTypes2.html) || '';
+      if (hasExpandedChild(multiTypeOptions)) {
+        multiTypeOptions['::expanded'] = true;
+      }
       obj['::ONE~OF'] = multiTypeOptions;
     }
   } else if (schema.type === 'object' || schema.properties) {
@@ -13672,6 +13688,10 @@ function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
       return `${typeObj.html}`;
     }
     return '';
+  }
+  const isComplexSchema = obj['::type'] === 'object' || obj['::type'] === 'array';
+  if (isComplexSchema && (schema['x-schema-expanded'] === true || hasExpandedChild(obj))) {
+    obj['::expanded'] = true;
   }
   return obj;
 }
@@ -14246,12 +14266,12 @@ class SchemaTree extends lit_element_s {
         </div>
         <span part="schema-description" class='m-markdown'> ${unsafe_html_o(marked(((_this$data3 = this.data) === null || _this$data3 === void 0 ? void 0 : _this$data3['::description']) || ''))}</span>
         ${this.data ? y`
-            ${this.generateTree(this.data['::type'] === 'array' ? this.data['::props'] : this.data, this.data['::type'], this.data['::array-type'] || '')}` : y`<span class='mono-font' style='color:var(--red)'> Schema not found </span>`}
+            ${this.generateTree(this.data['::type'] === 'array' ? this.data['::props'] : this.data, this.data['::type'], this.data['::array-type'] || '', '', '', 0, 0, '', this.data['::expanded'] === true)}` : y`<span class='mono-font' style='color:var(--red)'> Schema not found </span>`}
       </div>  
     `;
   }
-  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '') {
-    var _data$Type;
+  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '', nodeExpanded = false) {
+    var _data$Type, _data$Type2;
     if (this.schemaHideReadOnly === 'true') {
       if (dataType === 'array') {
         if (readOrWrite === 'readonly') {
@@ -14301,9 +14321,11 @@ class SchemaTree extends lit_element_s {
     const xxxOfChild = Object.keys(data).some(k => k.startsWith('::ANY~OF') || k.startsWith('::ONE~OF'));
     const originalSchemaLevel = schemaLevel;
     schemaLevel = xxxOfChild ? 0 : schemaLevel;
+    const isExpanded = schemaLevel < this.schemaExpandLevel || data['::expanded'] === true || nodeExpanded;
+    const rowState = isExpanded || (_data$Type2 = data['::type']) !== null && _data$Type2 !== void 0 && _data$Type2.startsWith('xxx-of') ? 'expanded' : 'collapsed';
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = y`<span class="open-bracket array-of-object" >[</span>`;
           } else {
@@ -14314,7 +14336,7 @@ class SchemaTree extends lit_element_s {
         }
         closeBracket = xxxOfChild ? ']' : '}]';
       } else {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = y`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}</span>`;
           } else {
@@ -14328,7 +14350,7 @@ class SchemaTree extends lit_element_s {
     } else if (data['::type'] === 'array') {
       if (dataType === 'array') {
         const arrType = arrayType !== 'object' ? arrayType : '';
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = y`<span class="open-bracket array-of-array" data-array-type="${arrType}">[ ${arrType} </span>`;
           } else {
@@ -14339,7 +14361,7 @@ class SchemaTree extends lit_element_s {
         }
         closeBracket = xxxOfChild ? ']' : ']]';
       } else {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = y`<span class="open-bracket array"></span>`;
           } else {
@@ -14352,9 +14374,8 @@ class SchemaTree extends lit_element_s {
       }
     }
     if (typeof data === 'object') {
-      var _data$Type2;
       return y`
-        <div class="tr ${schemaLevel < this.schemaExpandLevel || (_data$Type2 = data['::type']) !== null && _data$Type2 !== void 0 && _data$Type2.startsWith('xxx-of') ? 'expanded' : 'collapsed'} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
+        <div class="tr ${rowState} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
           <div class="td key ${data['::deprecated'] ? 'deprecated' : ''}" style='min-width:${minFieldColWidth}px'>
             ${data['::type'] === 'xxx-of-option' || data['::type'] === 'xxx-of-array' || key.startsWith('::OPTION') ? y`<span class='key-label xxx-of-key'> ${keyLabel}</span><span class="xxx-of-descr">${keyDescr}</span>` : keyLabel === '::props' || keyLabel === '::ARRAY~OF' ? '' : originalSchemaLevel > 0 ? y`<span class="key-label" title="${readOrWrite === 'readonly' ? 'Read-Only' : readOrWrite === 'writeonly' ? 'Write-Only' : ''}">
                       ${data['::deprecated'] ? '✗' : ''}
@@ -14369,7 +14390,7 @@ class SchemaTree extends lit_element_s {
               ${Object.keys(data).map(dataKey => {
         var _data$dataKey;
         return y`
-                ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable'].includes(dataKey) ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object' ? y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, data[dataKey]['::description'], newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '')}` : '' : y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, ((_data$dataKey = data[dataKey]) === null || _data$dataKey === void 0 ? void 0 : _data$dataKey['::description']) || '', newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '')}`}
+                ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable', '::expanded'].includes(dataKey) ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object' ? y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, data[dataKey]['::description'], newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '', data[dataKey]['::expanded'] === true)}` : '' : y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, ((_data$dataKey = data[dataKey]) === null || _data$dataKey === void 0 ? void 0 : _data$dataKey['::description']) || '', newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '', data[dataKey]['::expanded'] === true)}`}
               `;
       })}
             `}
@@ -16374,12 +16395,12 @@ class SchemaTable extends lit_element_s {
             <div class='key-descr' style='font-family:var(--font-regular); font-weight:bold; color:var(--fg);'> Description </div>
           </div>
           ${this.data ? y`
-              ${this.generateTree(this.data['::type'] === 'array' ? this.data['::props'] : this.data, this.data['::type'], this.data['::array-type'])}` : ''}  
+              ${this.generateTree(this.data['::type'] === 'array' ? this.data['::props'] : this.data, this.data['::type'], this.data['::array-type'], '', '', 0, 0, '', this.data['::expanded'] === true)}` : ''}  
         </div>
       </div>  
     `;
   }
-  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '') {
+  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '', nodeExpanded = false) {
     var _data$Type, _keyLabel;
     if (this.schemaHideReadOnly === 'true') {
       if (dataType === 'array') {
@@ -16410,6 +16431,7 @@ class SchemaTable extends lit_element_s {
     }
     const newSchemaLevel = (_data$Type = data['::type']) !== null && _data$Type !== void 0 && _data$Type.startsWith('xxx-of') ? schemaLevel : schemaLevel + 1;
     const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' || key.startsWith('::OPTION') ? indentLevel : indentLevel + 1;
+    const isExpanded = newSchemaLevel <= this.schemaExpandLevel || data['::expanded'] === true || nodeExpanded;
     const leftPadding = 16 * newIndentLevel; // 2 space indentation at each level
     if (Object.keys(data).length === 0) {
       return y`<span class="td key object" style='padding-left:${leftPadding}px'>${key}</span>`;
@@ -16445,11 +16467,11 @@ class SchemaTable extends lit_element_s {
     if (typeof data === 'object') {
       return y`
         ${newSchemaLevel >= 0 && key ? y`
-            <div class='tr ${newSchemaLevel <= this.schemaExpandLevel ? 'expanded' : 'collapsed'} ${data['::type']}' data-obj='${keyLabel}' title="${data['::deprecated'] ? 'Deprecated' : ''}">
+            <div class='tr ${isExpanded ? 'expanded' : 'collapsed'} ${data['::type']}' data-obj='${keyLabel}' title="${data['::deprecated'] ? 'Deprecated' : ''}">
               <div class="td key ${data['::deprecated'] ? 'deprecated' : ''}" style='padding-left:${leftPadding}px'>
                 ${keyLabel || keyDescr ? y`
-                    <span class='obj-toggle ${newSchemaLevel < this.schemaExpandLevel ? 'expanded' : 'collapsed'}' data-obj='${keyLabel}'>
-                      ${schemaLevel < this.schemaExpandLevel ? '-' : '+'}
+                    <span class='obj-toggle ${isExpanded ? 'expanded' : 'collapsed'}' data-obj='${keyLabel}'>
+                      ${isExpanded ? '-' : '+'}
                     </span>` : ''}
                 ${data['::type'] === 'xxx-of-option' || data['::type'] === 'xxx-of-array' || key.startsWith('::OPTION') ? y`<span class="xxx-of-key" style="margin-left:-6px">${keyLabel}</span><span class="${isOneOfLabel ? 'xxx-of-key' : 'xxx-of-descr'}">${keyDescr}</span>` : keyLabel.endsWith('*') ? y`<span class="key-label" style="display:inline-block; margin-left:-6px;">${data['::deprecated'] ? '✗' : ''} ${keyLabel.substring(0, keyLabel.length - 1)}</span><span style='color:var(--red);'>*</span>` : y`<span class="key-label" style="display:inline-block; margin-left:-6px;">${data['::deprecated'] ? '✗' : ''} ${keyLabel === '::props' ? '' : keyLabel}</span>`}
                 ${data['::type'] === 'xxx-of' && dataType === 'array' ? y`<span style="color:var(--primary-color)">ARRAY</span>` : ''} 
@@ -16473,7 +16495,7 @@ class SchemaTable extends lit_element_s {
             ${Object.keys(data).map(dataKey => {
         var _data$dataKey;
         return y`
-              ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable'].includes(dataKey) ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object' ? y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, data[dataKey]['::description'], newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '')}` : '' : y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, ((_data$dataKey = data[dataKey]) === null || _data$dataKey === void 0 ? void 0 : _data$dataKey['::description']) || '', newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '')}`}
+              ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable', '::expanded'].includes(dataKey) ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object' ? y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, data[dataKey]['::description'], newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '', data[dataKey]['::expanded'] === true)}` : '' : y`${this.generateTree(data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey], data[dataKey]['::type'], data[dataKey]['::array-type'] || '', dataKey, ((_data$dataKey = data[dataKey]) === null || _data$dataKey === void 0 ? void 0 : _data$dataKey['::description']) || '', newSchemaLevel, newIndentLevel, data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '', data[dataKey]['::expanded'] === true)}`}
             `;
       })}
           `}
@@ -26812,7 +26834,7 @@ function getType(str) {
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	(() => {
-/******/ 		__webpack_require__.h = () => ("199c1cbe01c2d734db32")
+/******/ 		__webpack_require__.h = () => ("97ad53b8f5bcf40ecdae")
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
