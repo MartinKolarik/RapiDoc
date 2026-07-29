@@ -115,6 +115,12 @@ export default class SchemaTable extends LitElement {
                 this.data['::type'] === 'array' ? this.data['::props'] : this.data,
                 this.data['::type'],
                 this.data['::array-type'],
+                '',
+                '',
+                0,
+                0,
+                '',
+                this.data['::expanded'] === true,
               )}`
             : ''
           }  
@@ -123,7 +129,7 @@ export default class SchemaTable extends LitElement {
     `;
   }
 
-  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '') {
+  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '', nodeExpanded = false) {
     if (this.schemaHideReadOnly === 'true') {
       if (dataType === 'array') {
         if (readOrWrite === 'readonly') {
@@ -160,6 +166,7 @@ export default class SchemaTable extends LitElement {
 
     const newSchemaLevel = data['::type']?.startsWith('xxx-of') ? schemaLevel : (schemaLevel + 1);
     const newIndentLevel = dataType === 'xxx-of-option' || data['::type'] === 'xxx-of-option' || key.startsWith('::OPTION') ? indentLevel : (indentLevel + 1);
+    const isExpanded = newSchemaLevel <= this.schemaExpandLevel || data['::expanded'] === true || nodeExpanded;
     const leftPadding = 16 * newIndentLevel; // 2 space indentation at each level
     if (Object.keys(data).length === 0) {
       return html`<span class="td key object" style='padding-left:${leftPadding}px'>${key}</span>`;
@@ -198,12 +205,12 @@ export default class SchemaTable extends LitElement {
       return html`
         ${newSchemaLevel >= 0 && key
           ? html`
-            <div class='tr ${newSchemaLevel <= this.schemaExpandLevel ? 'expanded' : 'collapsed'} ${data['::type']}' data-obj='${keyLabel}' title="${data['::deprecated'] ? 'Deprecated' : ''}">
+            <div class='tr ${isExpanded ? 'expanded' : 'collapsed'} ${data['::type']}' data-obj='${keyLabel}' title="${data['::deprecated'] ? 'Deprecated' : ''}">
               <div class="td key ${data['::deprecated'] ? 'deprecated' : ''}" style='padding-left:${leftPadding}px'>
                 ${(keyLabel || keyDescr)
                   ? html`
-                    <span class='obj-toggle ${newSchemaLevel < this.schemaExpandLevel ? 'expanded' : 'collapsed'}' data-obj='${keyLabel}'>
-                      ${schemaLevel < this.schemaExpandLevel ? '-' : '+'}
+                    <span class='obj-toggle ${isExpanded ? 'expanded' : 'collapsed'}' data-obj='${keyLabel}'>
+                      ${isExpanded ? '-' : '+'}
                     </span>`
                   : ''
                 }
@@ -239,7 +246,7 @@ export default class SchemaTable extends LitElement {
           ? html`${this.generateTree(data[0], 'xxx-of-option', '', '::ARRAY~OF', '', newSchemaLevel, newIndentLevel, '')}`
           : html`
             ${Object.keys(data).map((dataKey) => html`
-              ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable'].includes(dataKey)
+              ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable', '::expanded'].includes(dataKey)
                 ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object'
                   ? html`${this.generateTree(
                     data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey],
@@ -250,6 +257,7 @@ export default class SchemaTable extends LitElement {
                       newSchemaLevel,
                       newIndentLevel,
                       data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '',
+                      data[dataKey]['::expanded'] === true,
                     )}`
                   : ''
                 : html`${this.generateTree(
@@ -261,6 +269,7 @@ export default class SchemaTable extends LitElement {
                   newSchemaLevel,
                   newIndentLevel,
                   data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '',
+                  data[dataKey]['::expanded'] === true,
                 )}`
               }
             `)}

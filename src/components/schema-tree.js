@@ -114,6 +114,12 @@ export default class SchemaTree extends LitElement {
               this.data['::type'] === 'array' ? this.data['::props'] : this.data,
               this.data['::type'],
               this.data['::array-type'] || '',
+              '',
+              '',
+              0,
+              0,
+              '',
+              this.data['::expanded'] === true,
             )}`
           : html`<span class='mono-font' style='color:var(--red)'> Schema not found </span>`
         }
@@ -121,7 +127,7 @@ export default class SchemaTree extends LitElement {
     `;
   }
 
-  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '') {
+  generateTree(data, dataType = 'object', arrayType = '', key = '', description = '', schemaLevel = 0, indentLevel = 0, readOrWrite = '', nodeExpanded = false) {
     if (this.schemaHideReadOnly === 'true') {
       if (dataType === 'array') {
         if (readOrWrite === 'readonly') {
@@ -179,10 +185,12 @@ export default class SchemaTree extends LitElement {
     const xxxOfChild = Object.keys(data).some((k) => k.startsWith('::ANY~OF') || k.startsWith('::ONE~OF'));
     const originalSchemaLevel = schemaLevel;
     schemaLevel = xxxOfChild ? 0 : schemaLevel;
+    const isExpanded = schemaLevel < this.schemaExpandLevel || data['::expanded'] === true || nodeExpanded;
+    const rowState = isExpanded || data['::type']?.startsWith('xxx-of') ? 'expanded' : 'collapsed';
 
     if (data['::type'] === 'object') {
       if (dataType === 'array') {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = html`<span class="open-bracket array-of-object" >[</span>`;
           } else {
@@ -193,7 +201,7 @@ export default class SchemaTree extends LitElement {
         }
         closeBracket = xxxOfChild ? ']' : '}]';
       } else {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = html`<span class="open-bracket object">${data['::nullable'] ? 'null┃' : ''}</span>`;
           } else {
@@ -207,7 +215,7 @@ export default class SchemaTree extends LitElement {
     } else if (data['::type'] === 'array') {
       if (dataType === 'array') {
         const arrType = arrayType !== 'object' ? arrayType : '';
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = html`<span class="open-bracket array-of-array" data-array-type="${arrType}">[ ${arrType} </span>`;
           } else {
@@ -218,7 +226,7 @@ export default class SchemaTree extends LitElement {
         }
         closeBracket = xxxOfChild ? ']' : ']]';
       } else {
-        if (schemaLevel < this.schemaExpandLevel) {
+        if (isExpanded) {
           if (xxxOfChild) {
             openBracket = html`<span class="open-bracket array"></span>`;
           } else {
@@ -233,7 +241,7 @@ export default class SchemaTree extends LitElement {
 
     if (typeof data === 'object') {
       return html`
-        <div class="tr ${schemaLevel < this.schemaExpandLevel || data['::type']?.startsWith('xxx-of') ? 'expanded' : 'collapsed'} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
+        <div class="tr ${rowState} ${data['::type'] || 'no-type-info'}${data['::nullable'] ? ' nullable' : ''}" title="${data['::deprecated'] ? 'Deprecated' : ''}">
           <div class="td key ${data['::deprecated'] ? 'deprecated' : ''}" style='min-width:${minFieldColWidth}px'>
             ${data['::type'] === 'xxx-of-option' || data['::type'] === 'xxx-of-array' || key.startsWith('::OPTION')
               ? html`<span class='key-label xxx-of-key'> ${keyLabel}</span><span class="xxx-of-descr">${keyDescr}</span>`
@@ -255,7 +263,7 @@ export default class SchemaTree extends LitElement {
             ? html`${this.generateTree(data[0], 'xxx-of-option', '', '::ARRAY~OF', '', newSchemaLevel, newIndentLevel, data[0]['::readwrite'])}`
             : html`
               ${Object.keys(data).map((dataKey) => html`
-                ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable'].includes(dataKey)
+                ${['::title', '::description', '::type', '::props', '::deprecated', '::array-type', '::readwrite', '::dataTypeLabel', '::nullable', '::expanded'].includes(dataKey)
                   ? data[dataKey]['::type'] === 'array' || data[dataKey]['::type'] === 'object'
                     ? html`${this.generateTree(
                       data[dataKey]['::type'] === 'array' ? data[dataKey]['::props'] : data[dataKey],
@@ -266,6 +274,7 @@ export default class SchemaTree extends LitElement {
                         newSchemaLevel,
                         newIndentLevel,
                         data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '',
+                        data[dataKey]['::expanded'] === true,
                       )}`
                     : ''
                   : html`${this.generateTree(
@@ -277,6 +286,7 @@ export default class SchemaTree extends LitElement {
                     newSchemaLevel,
                     newIndentLevel,
                     data[dataKey]['::readwrite'] ? data[dataKey]['::readwrite'] : '',
+                    data[dataKey]['::expanded'] === true,
                   )}`
                 }
               `)}

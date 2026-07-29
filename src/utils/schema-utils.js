@@ -652,6 +652,12 @@ function generateMarkdownForArrayAndObjectDescription(schema, level = 0) {
  * @param {number} level - recursion level
  * @param {string} suffix - used for suffixing property names to avoid duplicate props during object composion
  */
+function hasExpandedChild(value) {
+  return Object.values(value).some((child) => (
+    child && typeof child === 'object' && child['::expanded'] === true
+  ));
+}
+
 export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
   if (!schema) {
     return;
@@ -717,6 +723,9 @@ export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
         objWithAnyOfProps['::type'] = 'xxx-of-option';
       }
     });
+    if (hasExpandedChild(objWithAnyOfProps)) {
+      objWithAnyOfProps['::expanded'] = true;
+    }
     obj[(schema.anyOf ? `::ANY~OF ${suffix}` : `::ONE~OF ${suffix}`)] = objWithAnyOfProps;
     // obj['::type'] = 'object';
     obj['::type'] = 'object';
@@ -777,17 +786,27 @@ export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
               objTypeOption[key] = schemaInObjectNotation(schema.properties[key], {}, (level + 1));
             }
           }
+          if (schema['x-schema-expanded'] === true || hasExpandedChild(objTypeOption)) {
+            objTypeOption['::expanded'] = true;
+          }
           multiTypeOptions[`::OPTION~${i + 1}`] = objTypeOption;
         } else if (v === 'array') {
-          multiTypeOptions[`::OPTION~${i + 1}`] = {
+          const arrayTypeOption = {
             '::title': schema.title || '',
             '::description': schema.description || '',
             '::type': 'array',
             '::props': schemaInObjectNotation(schema.items, {}, (level + 1)),
           };
+          if (schema['x-schema-expanded'] === true || hasExpandedChild(arrayTypeOption)) {
+            arrayTypeOption['::expanded'] = true;
+          }
+          multiTypeOptions[`::OPTION~${i + 1}`] = arrayTypeOption;
         }
       });
       multiTypeOptions[`::OPTION~${complexTypes.length + 1}`] = multiPrimitiveTypes?.html || '';
+      if (hasExpandedChild(multiTypeOptions)) {
+        multiTypeOptions['::expanded'] = true;
+      }
       obj['::ONE~OF'] = multiTypeOptions;
     }
   } else if (schema.type === 'object' || schema.properties) { // If Object
@@ -833,6 +852,10 @@ export function schemaInObjectNotation(schema, obj, level = 0, suffix = '') {
       return `${typeObj.html}`;
     }
     return '';
+  }
+  const isComplexSchema = obj['::type'] === 'object' || obj['::type'] === 'array';
+  if (isComplexSchema && (schema['x-schema-expanded'] === true || hasExpandedChild(obj))) {
+    obj['::expanded'] = true;
   }
   return obj;
 }
